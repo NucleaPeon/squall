@@ -42,8 +42,11 @@ class Session():
             - AdapterException: Problem with adapter, encompassess all possible
               adapter errors
         '''
-        self.pool = {}          # Collection of database connections
+        # Collection of database connections
+        self.pool = {db_host: {db_type: {db_name: None}}}
         self.broadcast = True   # Sends all db commands to all conns in pool
+        
+        
         
     def connect(self, db_type, db_name, db_host='localhost'):
         '''
@@ -62,7 +65,7 @@ class Session():
         # Connect using adapter
         # Add adapter to pool
         # Return object on success or None
-        pass
+        print("Hello world")
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
         '''
