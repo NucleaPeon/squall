@@ -5,6 +5,10 @@
 # Date:   July 25 2013
 #
 
+'''
+TODO: How to init an adapter, how to call it/close it 
+'''
+
 ADAPTERS = {'sqlite3' : None,
             'sqlserver': None,
             'mysql': None,
@@ -49,9 +53,12 @@ class Session(object):
               adapter errors
         '''
         # Collection of database connections
+
+        if not db_type in ADAPTERS.keys():
+            raise AdapterException('No Database Type Found' + db_type)
+        
         self.pool = {db_host: {db_type: {db_name: None}}}
         self.broadcast = True   # Sends all db commands to all conns in pool
-        
         
         
     def connect(self, db_type, db_name, db_host='localhost'):
@@ -63,10 +70,7 @@ class Session(object):
             
             If a connection is successfully made, it will add itself to the db
             pool. 
-            
-            
         '''
-        
         # Fetch adapter
         # Connect using adapter
         # Add adapter to pool
@@ -74,8 +78,6 @@ class Session(object):
         
         if not db_type in ADAPTERS.keys():
             raise(AdapterException("Unknown Database Type"))
-        
-        
         self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect()
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
@@ -107,6 +109,26 @@ class Session(object):
         '''
         pass
         
+    def update(self, sql, *args):
+        pass
+    
+    def delete(self, sql, *args):
+        pass
+    
+    def select(self, sql, *args):
+        pass
+    
+def db(db_type):
+    import sys,importlib 
+    sys.path.append('adapters')
+    module = None
+    if db_type == 'sqlite3':
+        module = importlib.import_module('sqlite3')
+        if not module is None:
+            api = importlib.import_module('squallsqlite3').SqlAdapter(module)
+            ADAPTERS[db_type] = api
+    return module
+    
 class AdapterException(Exception):
     
     def __init__(self, message):

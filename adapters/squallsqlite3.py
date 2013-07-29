@@ -4,28 +4,28 @@
 # Author: Daniel Kettle
 # Date:   July 29 2013
 #
-
-import sqlite3
-
-class SqliteAdapter():
+class SqlAdapter():
     '''
     API for calling sqlite3
+    
+    Expects the sqlite3 module as module parameter
     '''
     
-    def __init__(self, db_name, db_host='localhost'):
+    def __init__(self, module):
+        self.module = module
+    
+    def connect(self, db_name, db_host='localhost'):
+        # Return connection object
         pass
     
-    def connect(self):
+    def insert(self, success_callback=None, failure_callback=None):
         pass
     
-    def insert(self):
+    def select(self, success_callback=None, failure_callback=None):
         pass
     
-    def select(self):
+    def update(self, success_callback=None, failure_callback=None):
         pass
     
-    def update(self):
-        pass
-    
-    def delete(self):
+    def delete(self, success_callback=None, failure_callback=None):
         pass
