@@ -5,7 +5,13 @@
 # Date:   July 25 2013
 #
 
-class Session():
+ADAPTERS = {'sqlite3' : None,
+            'sqlserver': None,
+            'mysql': None,
+            'postgres': None,
+            'firebird': None}
+
+class Session(object):
     '''
     :Description:
         Generic adapter class for the Database
@@ -65,7 +71,12 @@ class Session():
         # Connect using adapter
         # Add adapter to pool
         # Return object on success or None
-        print("Hello world")
+        
+        if not db_type in ADAPTERS.keys():
+            raise(AdapterException("Unknown Database Type"))
+        
+        
+        self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect()
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
         '''
@@ -94,4 +105,9 @@ class Session():
         :Returns:
             - boolean: True if successful. 
         '''
+        pass
         
+class AdapterException(Exception):
+    
+    def __init__(self, message):
+        Exception.__init__(self, message)
