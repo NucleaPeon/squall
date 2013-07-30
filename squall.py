@@ -139,6 +139,9 @@ def db(db_type):
         if not module is None:
             api = importlib.import_module('squallsqlite3').SqlAdapter(module)
             ADAPTERS[db_type] = api
+    elif db_type == 'sqlserver':
+        module = importlib.import_module('pyodbc')
+        
     return module
     
 class AdapterException(Exception):

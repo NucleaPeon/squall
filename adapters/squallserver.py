@@ -23,22 +23,59 @@ class SqlAdapter():
         '''
         self.conn = connect(driver='{SQL Server}', server=db_host, database=db_name,
                             uid=uid, pwd=pw) # FIXME
-    
+        self.cursor = self.conn.cursor() # We need this cursor in the class
+        return self.conn
     
     def disconnect(self):
         pass
     
-    def insert(self):
-        pass
+    def insert(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any insert specific code is required,
+        put it callback.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        return self.conn
     
-    def update(self):
-        pass
+    def update(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any update specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        return self.conn
         
-    def delete(self):
-        pass
-    
-    def select(self):
-        pass
+    def select(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any select specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        return self.conn
+        
+    def delete(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any delete specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        return self.conn
     
     def commit(self):
         pass
