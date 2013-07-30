@@ -6,7 +6,9 @@
 #
 
 '''
-TODO: How to init an adapter, how to call it/close it 
+TODO: How to init an adapter, how to call it/close it
+
+FIXME: Threading 
 '''
 
 ADAPTERS = {'sqlite3' : None,
@@ -119,6 +121,16 @@ class Session(object):
         return self.pool[db_host][db_type][db_name].select(sql, tuple(args))
     
 def db(db_type):
+    '''
+    :Description:
+        Method assigns the imported SqlAdapter, or api object, into the
+        ADAPTERS dictionary. 
+        
+        Please note that this method returns the module, so if you need
+        methods that stem directly from the import itself (such as
+        exceptions), you will need to place the return value into
+        its own variable or re-call this method with the same parameters.
+    '''
     import sys,importlib 
     sys.path.append('adapters')
     module = None

@@ -21,16 +21,16 @@ class SqlAdapter():
             - db_name: string; name of database file
             - db_host: string; not used
         '''
-        conn = self.module.connect(db_name)
-        self.cursor = conn.cursor() # We need this cursor in the class
-        return conn
+        self.conn = self.module.connect(db_name)
+        self.cursor = self.conn.cursor() # We need this cursor in the class
+        return self.conn
     
     def disconnect(self, rollback=False):
         if rollback:
             self.rollback()
         else:
             self.commit()
-        self.module.close()
+        self.conn.close()
         self.module = None
     
     def insert(self, sql, params, precallback=None, postcallback=None):
@@ -43,6 +43,7 @@ class SqlAdapter():
         self.sql(sql, params)
         if not postcallback is None:
             postcallback()
+        return self.conn
     
     def update(self, sql, params, precallback=None, postcallback=None):
         '''
@@ -54,6 +55,7 @@ class SqlAdapter():
         self.sql(sql, params)
         if not postcallback is None:
             postcallback()
+        return self.conn
         
     def select(self, sql, params, precallback=None, postcallback=None):
         '''
@@ -65,6 +67,7 @@ class SqlAdapter():
         self.sql(sql, params)
         if not postcallback is None:
             postcallback()
+        return self.conn
         
     def delete(self, sql, params, precallback=None, postcallback=None):
         '''
@@ -76,12 +79,14 @@ class SqlAdapter():
         self.sql(sql, params)
         if not postcallback is None:
             postcallback()
+        return self.conn
     
     def sql(self, sql, params):
         self.cursor.execute(sql, params)
+        return self.conn
     
     def commit(self):
-        self.cursor.commit()
+        self.conn.commit()
         
     def rollback(self):
         raise self.module.IntegrityError()
