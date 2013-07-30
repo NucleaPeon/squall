@@ -33,6 +33,53 @@ class SqlAdapter():
         self.module.close()
         self.module = None
     
+    def insert(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any insert specific code is required,
+        put it callback.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+    
+    def update(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any update specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        
+    def select(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any select specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+        
+    def delete(self, sql, params, precallback=None, postcallback=None):
+        '''
+        Go directly to sql(), if any delete specific code is required,
+        put it here.
+        '''
+        if not precallback is None:
+            precallback()
+        self.sql(sql, params)
+        if not postcallback is None:
+            postcallback()
+    
+    def sql(self, sql, params):
+        self.cursor.execute(sql, params)
+    
     def commit(self):
         self.cursor.commit()
         
