@@ -4,6 +4,7 @@
 # Author: Daniel Kettle
 # Date:   July 29 2013
 #
+
 class SqlAdapter():
     '''
     API for calling sqlite3
@@ -15,17 +16,25 @@ class SqlAdapter():
         self.module = module
     
     def connect(self, db_name, db_host='localhost'):
-        # Return connection object
-        pass
+        '''
+        :Parameters:
+            - db_name: string; name of database file
+            - db_host: string; not used
+        '''
+        conn = self.module.connect(db_name)
+        self.cursor = conn.cursor() # We need this cursor in the class
+        return conn
     
-    def insert(self, success_callback=None, failure_callback=None):
-        pass
+    def disconnect(self, rollback=False):
+        if rollback:
+            self.rollback()
+        else:
+            self.commit()
+        self.module.close()
+        self.module = None
     
-    def select(self, success_callback=None, failure_callback=None):
-        pass
-    
-    def update(self, success_callback=None, failure_callback=None):
-        pass
-    
-    def delete(self, success_callback=None, failure_callback=None):
-        pass
+    def commit(self):
+        self.cursor.commit()
+        
+    def rollback(self):
+        raise self.module.IntegrityError()

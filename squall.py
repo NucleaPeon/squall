@@ -78,16 +78,19 @@ class Session(object):
         
         if not db_type in ADAPTERS.keys():
             raise(AdapterException("Unknown Database Type"))
-        self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect()
+        self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect(db_name, db_host)
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
         '''
         :Description:
             Safely remove a python db adapter from the pool.
         '''
-        pass
         
-    def insert(self, sql, *args):
+        self.pool[db_host][db_type][db_name].disconnect()
+        self.pool[db_host][db_type][db_name] = None
+    
+        
+    def insert(self, db_type, db_name, db_host, sql, *args):
         '''
         :Descriptions:
             Insert into the database. Actual sql will be determined at a later
@@ -102,21 +105,18 @@ class Session(object):
             - ArgumentMismatchException: When the number of '?' doesn't match
               up with the length of arguments supplied to the method.
             - RollbackException: An error occured in sending the sql statement
-              to the database. 
-              
-        :Returns:
-            - boolean: True if successful. 
+              to the database.  
         '''
-        pass
+        return self.pool[db_host][db_type][db_name].insert(sql, tuple(args))
         
-    def update(self, sql, *args):
-        pass
+    def update(self, db_type, db_name, db_host, sql, *args):
+        return self.pool[db_host][db_type][db_name].update(sql, tuple(args))
     
-    def delete(self, sql, *args):
-        pass
+    def delete(self, db_type, db_name, db_host, sql, *args):
+        return self.pool[db_host][db_type][db_name].delete(sql, tuple(args))
     
-    def select(self, sql, *args):
-        pass
+    def select(self, db_type, db_name, db_host, sql, *args):
+        return self.pool[db_host][db_type][db_name].select(sql, tuple(args))
     
 def db(db_type):
     import sys,importlib 
