@@ -8,8 +8,8 @@ compatibility of all relational databases.
 
 A list of databases I want to utilize in this adapter software are:
 
-* sqlite3
-* sqlserver
+* sqlite3 - successfully written, basic tests implemented
+* sqlserver - current driver project
 * mysql
 * postgres
 * firebird

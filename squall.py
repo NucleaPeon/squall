@@ -12,7 +12,7 @@ FIXME: Threading
 '''
 
 ADAPTERS = {'sqlite3' : None,
-            'sqlserver': None,
+            'sqlserver': None, # Uses odbc drivers
             'mysql': None,
             'postgres': None,
             'firebird': None}

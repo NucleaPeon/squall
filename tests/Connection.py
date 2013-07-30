@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         del self.s
 
 
-    def testName(self):
+    def testConnections(self):
         print("Test: Broadcast")
         assert self.s.broadcast == True, 'Broadcast is not set to initial value'
         
