@@ -29,3 +29,22 @@ Functionality that must be sustained:
 
 This software aims to be a solid single-threaded application first and 
 foremost. Multi-threading can be implemented at a later date.
+
+How to use this software
+----
+
+Sql Server
+---------
+import squall
+self.s = squall.Session('sqlserver', 'rfid')
+self.module = squall.db('sqlserver') # module contains connection methods
+self.sqlobj = squall.ADAPTERS['sqlserver'] # sets the sql object which contains update/insert/delete/select methods
+self.sqlobj.connect('yourdb', trusted=True, driver='SQL Server') # Connects to sqlserver with generic driver using your own credentials
+
+OR
+
+self.s = squall.Session('sqlite3', 'rfid.db')
+self.module = squall.db('sqlite3')
+self.sqlobj = squall.ADAPTERS['sqlite3']
+self.sqlobj.connect('relative/or/absolute/path/to/database.db') # will create if not found
+ 
