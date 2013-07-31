@@ -88,6 +88,9 @@ class SqlAdapter():
             postcallback()
         return self.conn
     
+    def date(self):
+        return None
+    
     def sql(self, sql, params):
         self.cursor.execute(sql, params)
         return self.conn

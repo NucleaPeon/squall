@@ -134,6 +134,9 @@ class SqlAdapter():
         self.cursor.execute(sql, params)
         return self.conn
     
+    def date(self):
+        return None
+    
     def commit(self):
         self.conn.commit()
         
