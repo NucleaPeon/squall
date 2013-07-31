@@ -15,10 +15,8 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         print("Connecting to SQL Server on local machine")
-        self.s = squall.Session('sqlserver', 'rfid')
+        self.sqlobj = squall.Session().connect('rfid', trusted=True, driver='SQL Server')
         self.module = squall.db('sqlserver')
-        self.sqlobj = squall.ADAPTERS['sqlserver']
-        squall.ADAPTERS['sqlserver'].connect('rfid', trusted=True, driver='SQL Server')
         print("Checking driver and connection")
         assert not self.module is None, 'Python Driver not imported successfully'
         assert not self.sqlobj is None, 'Squallserver not imported correctly or invalid'

@@ -35,38 +35,6 @@ class Session(object):
         multiple databases simultaneously via a singleton thread per
         database
     '''
-    
-    def __init__(self, db_type, db_name, db_host="localhost"):
-        '''
-        :Description:
-            Contains a pool of connections that are identified by the
-            db_type, db_name and db_host parameters. If all 3 values 
-            are the same as another existing connection, it will fail.
-            
-        :Parameters:
-            - db_type: string; Name of Adapter
-                - Ex: "mysql" or "sqlite3"
-            - db_name: string; Name of the Database to connect to
-            - db_host: string; Address of the Database
-                - Default is "localhost"
-                
-        :Throws:
-            - UndefinedAdapterException: Requesting connection to an unknown
-              database. Squall will not be able to find an adapter.
-            - DatabaseNotFound: Selecting a Database that does not exist.
-            - (a timeout exception for remote databases?)
-            - (remote database could not connect, for invalid permissions or 
-               login info, etc)
-            - AdapterException: Problem with adapter, encompassess all possible
-              adapter errors
-        '''
-        # Collection of database connections
-
-        if not db_type in ADAPTERS.keys():
-            raise AdapterException('No Database Type Found' + db_type)
-        
-        self.pool = {db_host: {db_type: {db_name: None}}}
-        self.broadcast = True   # Sends all db commands to all conns in pool
         
         
     def connect(self, db_name, **kwargs):
@@ -84,17 +52,19 @@ class Session(object):
             - db_name: string; name of the database to connect to
             - **kwargs: dictionary; See the following pair data:
                 - hostname: string; remote address or 'localhost' (default)
-                - driver: string; name of the driver to use or 'sqlite3' (default)
+                - adapter: string; name of the driver to use or 'sqlite3' (default)
                 - other parameters to pass on to SqlAdapter connect() function
             
         :Returns:
             - connected adapter object, or the api object for calling sql commands
         '''
-        if not kwargs.get('driver', 'sqlite3') in ADAPTERS.keys():
+        db_type = kwargs.get('adapter', 'sqlite3')
+        if not db_type in ADAPTERS.keys():
             raise(AdapterException("Unknown Database Type"))
         db_host = kwargs.get('hostname', 'localhost')
-        self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect(db_name, db_host)
-        return ADAPTERS[db_type] # Return connected adapter.
+        self.module = db(db_type) # This sets up ADAPTERS. FIXME: non obvious
+        ADAPTERS[db_type].connect(db_name, **kwargs)
+        return ADAPTERS[db_type] # FIXME: extra step to return value, see FIXME above
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
         '''
