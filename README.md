@@ -41,10 +41,12 @@ self.module = squall.db('sqlserver') # module contains connection methods
 self.sqlobj = squall.ADAPTERS['sqlserver'] # sets the sql object which contains update/insert/delete/select methods
 self.sqlobj.connect('yourdb', trusted=True, driver='SQL Server') # Connects to sqlserver with generic driver using your own credentials
 
-### PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION...
+# PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION...
 
 OR
 
+Sqlite3 
+---------
 self.s = squall.Session('sqlite3', 'rfid.db')
 self.module = squall.db('sqlite3')
 self.sqlobj = squall.ADAPTERS['sqlite3']
