@@ -69,10 +69,7 @@ class SqlAdapter():
 #             connection_str.append(kwargs.get('uid'))
 #         if not kwargs.get('pwd') is None:
 #             connection_str.append('PWD=', kwargs.get('pwd'))
-        
-            
         # Converts array to string separated by ; characters into configuration
-        print(';'.join(connection_str))
         self.conn = self.module.connect(';'.join(connection_str)) 
         
         self.cursor = self.conn.cursor() # We need this cursor in the class
