@@ -15,12 +15,19 @@ class SqlAdapter():
     def __init__(self, module):
         self.module = module
     
-    def connect(self, db_name, db_host='localhost'):
+    def connect(self, db_name, **kwargs):
         '''
+        :Description:
+        
         :Parameters:
             - db_name: string; name of database file
-            - db_host: string; not used
+            - **kwargs: dictionary; contains keywords and associated values:
+                - db_host: string; hostname -- in sqlite3, only localhost is applicable
+                  and all other values will be ignored.
         '''
+        db_host = 'localhost'
+        if not kwargs.get('db_host') is None:
+            db_host = kwargs.get('db_host')
         self.conn = self.module.connect(db_name)
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn

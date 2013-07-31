@@ -3,12 +3,12 @@ Created on Jul 30, 2013
 
 @author: dkettle
 '''
-import unittest
-import squall
-
 import sys, os
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
+
+import unittest
+import squall
 
 class Test(unittest.TestCase):
 

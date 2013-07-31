@@ -141,6 +141,9 @@ def db(db_type):
             ADAPTERS[db_type] = api
     elif db_type == 'sqlserver':
         module = importlib.import_module('pyodbc')
+        if not module is None:
+            api = importlib.import_module('squallserver').SqlAdapter(module)
+            ADAPTERS[db_type] = api
         
     return module
     
