@@ -31,6 +31,8 @@ class SqlAdapter():
     
     def __init__(self, module):
         self.module = module
+        self.conn = None
+        self.cursor = None
         
     def connect(self, db_name, **kwargs):
         '''
@@ -61,17 +63,17 @@ class SqlAdapter():
                 'Database not supplied to driver, cannot connect')
         else:
             connection_str.append('DATABASE={}'.format(db_name))
-        
         if kwargs.get('trusted', False):
             connection_str.append('Trusted_Connection=yes')
             
-#         if not kwargs.get('uid') is None:
-#             connection_str.append(kwargs.get('uid'))
-#         if not kwargs.get('pwd') is None:
-#             connection_str.append('PWD=', kwargs.get('pwd'))
+        if not kwargs.get('uid') is None:
+            connection_str.append(kwargs.get('uid'))
+        if not kwargs.get('pwd') is None:
+            connection_str.append('PWD=', kwargs.get('pwd'))
+            
         # Converts array to string separated by ; characters into configuration
-        self.conn = self.module.connect(';'.join(connection_str)) 
-        
+        conn_str = ';'.join(connection_str)
+        self.conn = self.module.connect(conn_str) 
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
     
@@ -127,15 +129,14 @@ class SqlAdapter():
         return self.conn
     
     def sql(self, sql, params):
-        
         if "IF EXISTS" in sql:
             print("Warning: SQL Server does not allow IF EXISTS clauses")
             print("-- correct if wrong")
         self.cursor.execute(sql, params)
         return self.conn
     
-    def date(self):
-        return None
+    def sqldate(self):
+        return self.select('''SELECT GETDATE()''', ()) # Returns connection object
     
     def commit(self):
         self.conn.commit()

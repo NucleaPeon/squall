@@ -88,8 +88,8 @@ class SqlAdapter():
             postcallback()
         return self.conn
     
-    def date(self):
-        return None
+    def sqldate(self):
+        return self.select('''SELECT date('now');''', ())
     
     def sql(self, sql, params):
         self.cursor.execute(sql, params)
