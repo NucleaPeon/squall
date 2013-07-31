@@ -38,10 +38,9 @@ Sql Server
 ```
 import squall
 
-self.s = squall.Session('sqlserver', 'rfid')
-self.module = squall.db('sqlserver') # module contains connection methods
-self.sqlobj = squall.ADAPTERS['sqlserver'] # sets the sql object which contains update/insert/delete/select methods
-self.sqlobj.connect('yourdb', trusted=True, driver='SQL Server') # Connects to sqlserver with generic driver using your own credentials
+self.sqlobj = squall.Session().connect('rfid', adapter='sqlserver', trusted=True, driver='SQL Server')
+self.module = squall.db('sqlserver')
+self.sqlobj.[command](sql, param)
 ```
 
 ( PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION... )
@@ -51,9 +50,10 @@ OR
 Sqlite3 
 ---------
 ```
-self.s = squall.Session('sqlite3', 'rfid.db')
+import squall
+self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
 self.module = squall.db('sqlite3')
-self.sqlobj = squall.ADAPTERS['sqlite3']
-self.sqlobj.connect('relative/or/absolute/path/to/database.db') # will create if not found
+
+self.sqlobj.[command](sql, param)
 ```
  
