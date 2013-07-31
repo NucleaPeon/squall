@@ -69,7 +69,7 @@ class Session(object):
         self.broadcast = True   # Sends all db commands to all conns in pool
         
         
-    def connect(self, db_type, db_name, db_host='localhost'):
+    def connect(self, db_name, **kwargs):
         '''
         :Description:
             Attempts to connect to a database; if an identical connection exists
@@ -79,11 +79,20 @@ class Session(object):
             If a connection is successfully made, it will add itself to the db
             pool. 
             
+        :Parameters:
+            
+            - db_name: string; name of the database to connect to
+            - **kwargs: dictionary; See the following pair data:
+                - hostname: string; remote address or 'localhost' (default)
+                - driver: string; name of the driver to use or 'sqlite3' (default)
+                - other parameters to pass on to SqlAdapter connect() function
+            
         :Returns:
             - connected adapter object, or the api object for calling sql commands
         '''
-        if not db_type in ADAPTERS.keys():
+        if not kwargs.get('driver', 'sqlite3') in ADAPTERS.keys():
             raise(AdapterException("Unknown Database Type"))
+        db_host = kwargs.get('hostname', 'localhost')
         self.pool[db_host][db_type][db_name] = ADAPTERS[db_type].connect(db_name, db_host)
         return ADAPTERS[db_type] # Return connected adapter.
     
