@@ -45,7 +45,7 @@ class SqlAdapter():
         Go directly to sql(), if any insert specific code is required,
         put it callback.
         
-        Non-Query behaviour:
+        :Description:
             Since insert/update/delete require commit to perform, 
             multiple methods can be placed into a transaction and
             can all be commited at once.
@@ -53,19 +53,29 @@ class SqlAdapter():
             In order to utilize this functionality, callbacks are 
             required. Use the postcallback() to return the sql string.
             
+        :Parameters:
             Parameters that are submitted to both callback methods are
             as follows:
-            - sql (method): tack on additional non-queries before or after
+            - method: this insert method is supplied
+            - module: this class so that multiple methods can be strung 
+              together
               main non-query is submitted
-            - sql (parameter): this is the sql structure object or string
-              that 
+            - sql: this is the sql structure object or string that contains
+              the fields, tables and conditions for the statement
+            - params: tuple of parameters based on '?' in sql statement
+            
+        :Returns:
+            - connection object
         '''
         if not precallback is None:
-            precallback()
-        self.sql(sql, params)
+            # Submit parameters as a non-required dictionary
+            precallback(**{'method':self.insert, 'class':self, 
+                           'sql':sql, 'params':params})
+        conn = self.sql(sql, params)
         if not postcallback is None:
-            postcallback()
-        return self.conn
+            postcallback(**{'method':self.insert, 'class':self, 
+                           'sql':sql, 'params':params})
+        return conn
     
     def update(self, sql, params, precallback=None, postcallback=None):
         '''
@@ -74,10 +84,10 @@ class SqlAdapter():
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        conn = self.sql(sql, params)
         if not postcallback is None:
             postcallback()
-        return self.conn
+        return conn
         
     def select(self, sql, params, precallback=None, postcallback=None):
         '''

@@ -17,6 +17,8 @@ ADAPTERS = {'sqlite3' : None,
             'postgres': None,
             'firebird': None}
 
+COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
+
 class Session(object):
     '''
     :Description:
@@ -153,8 +155,61 @@ def db(db_type):
             ADAPTERS[db_type] = api
         
     return module
+
+class Sql():
+    
+    def __init__(self, command, table, fields = ['*'], conditions = {}):
+        '''
+        
+        :Conditions:
+            - "IF EXISTS" / "IF NOT EXISTS"
+                - Has no effect in sqlserver
+        '''
+        self.command = Command(command)
+        self.table = table
+        self.fields = fields
+        self.conditions = conditions
+        
+    class Command():
+        
+        def __init__(self, command):
+            if not command in COMMANDS:
+                raise InvalidSqlCommandException(
+                    'Command {} is not a valid command to issue'.format(
+                        str(command)))
+            self.command = command
+            
+    class Where():
+        
+        def __init__(self, field, operator, value, andwhere=None):
+            '''
+            TODO
+            :Parameters:
+                - value; string: can be an Sql object IF AND ONLY IF
+                  command == 'SELECT'
+                - andwhere: Where object: append a condition to the 
+                  query/non-query
+            '''
+            self.field = field
+            self.operator = operator
+            if type(value) == Command:
+                if Command.command.upper() == "SELECT":
+                    print("Do stuff")
+                else:
+                    raise InvalidSqlWhereClauseException(
+                        'Non-Queries not allowed in WHERE Clause')
+            self.value = value
+            
+    
     
 class AdapterException(Exception):
-    
     def __init__(self, message):
         Exception.__init__(self, message)
+        
+class InvalidSqlCommandException(AdapterException):
+    def __init(self, message):
+        AdapterException.__init__(self, message)
+        
+class InvalidSqlWhereClauseException(AdapterException):
+    def __init(self, message):
+        AdapterException.__init__(self, message)
