@@ -128,6 +128,11 @@ class SqlAdapter():
     def rollback(self):
         raise self.module.IntegrityError()
     
-class Sql(squallsql.Sql):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Insert(squallsql.Sql):
+    def __init__(self, table, fields, values):
+        super().__init__(Insert, 'INSERT', table, fields=fields,
+                         values=values)
+        
+    def __repr__(self):
+        return '''{} INTO {} VALUES {}'''.format(self.command, 
+            self.fields, self.values)

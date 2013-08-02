@@ -1,3 +1,4 @@
+#!/usr/bin/evn python3.2
 import sys, os, unittest
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
@@ -8,11 +9,17 @@ import squall
 
 class Test(unittest.TestCase):
     
+    testsql = squallsql.Sql('insert', table='t', 
+                                     fields=['x', 'y', 'z'], values=[5, 7, 9])
+#     sqlite3sql = adapters.squallsqlite3.Insert('t', ['x', 'y', 'z'], [5, 7, 9])
+    
     def setUp(self):
+        print(sys.version)
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
         self.module = squall.db('sqlite3')
         self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())
         self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));', ())
+        
         
     def tearDown(self):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())
@@ -28,7 +35,9 @@ class Test(unittest.TestCase):
         self.assertRaises(squall.InvalidSqlCommandException, 
             squallsql.Sql, 'superselect', table='t')
         basesql = squallsql.Sql
-        sqlite3sql = adapters.squallsqlite3.Sql
+        
+        
+#         print('Base Sql {} -- Sqlite3 Sql {}'.format(str(basesql), str(sqlite3sql)))
     
     def testSqlStatement(self):
         obj = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
