@@ -130,8 +130,8 @@ class SqlAdapter():
     
 class Insert(squallsql.Sql):
     def __init__(self, table, fields, values):
-        super().__init__(Insert, 'INSERT', table, fields=fields,
-                         values=values)
+        super().__init__('INSERT', table, fields, values)
+        
         
     def __repr__(self):
         return '''{} INTO {} VALUES {}'''.format(self.command, 

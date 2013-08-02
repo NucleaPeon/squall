@@ -11,10 +11,9 @@ class Test(unittest.TestCase):
     
     testsql = squallsql.Sql('insert', table='t', 
                                      fields=['x', 'y', 'z'], values=[5, 7, 9])
-#     sqlite3sql = adapters.squallsqlite3.Insert('t', ['x', 'y', 'z'], [5, 7, 9])
+    sqlite3sql = adapters.squallsqlite3.Insert('t', ['x', 'y', 'z'], [5, 7, 9])
     
     def setUp(self):
-        print(sys.version)
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
         self.module = squall.db('sqlite3')
         self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())

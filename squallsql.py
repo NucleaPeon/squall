@@ -47,7 +47,7 @@ class Sql():
         :Conditions:
         '''
         
-        self.command = self.Command(command)
+        self.command = self.Command(command.upper())
         self.table = table
         self.fields = fields
         self.values = values
@@ -67,7 +67,7 @@ class Sql():
     class Command():
         
         def __init__(self, command):
-            self.command = command.upper()
+            self.command = command
             if not self.command in Sql.COMMANDS:
                 raise squall.InvalidSqlCommandException(
                     'Command {} is not a valid command to issue'.format(
