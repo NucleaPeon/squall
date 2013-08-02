@@ -66,7 +66,8 @@ class Session(object):
         db_host = kwargs.get('hostname', 'localhost')
         self.module = db(db_type) # This sets up ADAPTERS. FIXME: non obvious
         ADAPTERS[db_type].connect(db_name, **kwargs)
-        return ADAPTERS[db_type] # FIXME: extra step to return value, see FIXME above
+        # FIXME: extra step to return value, see FIXME above
+        return ADAPTERS[db_type] 
     
     def disconnect(self, db_type, db_name, db_host='localhost'):
         '''
@@ -119,8 +120,8 @@ class Session(object):
             AdapterException will be thrown.
             
             Note: One area of contention is that this captures ALL Exceptions.
-            TODO: Either be more specific on what exception occured, or find the
-            exact exceptions I need to watch for. (ugly)
+            TODO: Either be more specific on what exception occured, or find 
+            the exact exceptions I need to watch for. (ugly)
         '''
         try:
             self.pool[db_host][db_type][db_name].date()
@@ -158,17 +159,21 @@ def db(db_type):
 
 class Sql():
     
-    def __init__(self, command, table, fields = ['*'], conditions = {}):
+    def __init__(self, command, table, fields = ['*'], conditions = None):
         '''
-        
         :Conditions:
-            - "IF EXISTS" / "IF NOT EXISTS"
-                - Has no effect in sqlserver
         '''
         self.command = Command(command)
         self.table = table
         self.fields = fields
         self.conditions = conditions
+        
+    def __repr__(self):
+        #FIXME: Problem with this command is that it doesn't take into account
+        # the "FROM" portion of queries and those which don't (UPDATE, INSERT)
+        # Need to differentiate from "FROM", "SET", and "VALUES"
+        return "{} {} {} {} {}".format(self.command, self.fields, self.table,
+                                       self.conditions)
         
     class Command():
         
@@ -177,17 +182,30 @@ class Sql():
                 raise InvalidSqlCommandException(
                     'Command {} is not a valid command to issue'.format(
                         str(command)))
-            self.command = command
+            self.command = command.upper()
             
-    class Where():
+        def __repr__(self):
+            if self.command == 'INSERT':
+                return "INSERT INTO"
+            else:
+                return self.command 
+            
+    class Condition():
+        def __init__(self):
+            pass
         
-        def __init__(self, field, operator, value, andwhere=None):
+        def __repr__(self):
+            return ''
+            
+    class Where(Condition):
+        
+        def __init__(self, field, operator, value, condition=None):
             '''
             TODO
             :Parameters:
                 - value; string: can be an Sql object IF AND ONLY IF
                   command == 'SELECT'
-                - andwhere: Where object: append a condition to the 
+                - condition: Condition object: append a condition to the 
                   query/non-query
             '''
             self.field = field
@@ -200,7 +218,35 @@ class Sql():
                         'Non-Queries not allowed in WHERE Clause')
             self.value = value
             
-    
+    class Exists(Condition):
+        
+        def __init__(self, exists=True):
+            self.exists = exists
+            
+        def __repr__(self):
+            if self.exists:
+                return "IF EXISTS"
+            else:
+                return "IF NOT EXISTS"
+        
+    class Table():
+        
+        def __init__(self, table):
+            self.table == table
+            
+        def __repr__(self):
+            return table
+        
+    class Fields():
+        
+        def __init__(self, *args):
+            # A Wildcard eliminates the need for any additional fields
+            if '*' in args:
+                args = '*'
+            self.fields = args
+            
+        def __repr__(self):
+            return ', '.join(self.fields)
     
 class AdapterException(Exception):
     def __init__(self, message):
