@@ -40,7 +40,8 @@ class Test(unittest.TestCase):
         assert self.sqlobj.insert('INSERT INTO t VALUES (?, ?, ?)', (1, 2, 3,)), 'Failed Sqlite3 Insert'
         self.sqlobj.commit()
         print("Test: Select Insert Statement")
-        assert self.sqlobj.select('SELECT * FROM t WHERE x = ?', (1,)), 'Select Statement Errored'
+        rows = self.sqlobj.select('SELECT * FROM t WHERE x = ?', (1,))
+        assert len(rows) > 0, 'Select Statement Errored'
         print("Test: Delete Insert")
         assert self.sqlobj.delete('DELETE FROM t WHERE x = ?', (1,)), 'Delete Statement Errored'
         self.sqlobj.commit()

@@ -44,6 +44,21 @@ class SqlAdapter():
         '''
         Go directly to sql(), if any insert specific code is required,
         put it callback.
+        
+        Non-Query behaviour:
+            Since insert/update/delete require commit to perform, 
+            multiple methods can be placed into a transaction and
+            can all be commited at once.
+            
+            In order to utilize this functionality, callbacks are 
+            required. Use the postcallback() to return the sql string.
+            
+            Parameters that are submitted to both callback methods are
+            as follows:
+            - sql (method): tack on additional non-queries before or after
+              main non-query is submitted
+            - sql (parameter): this is the sql structure object or string
+              that 
         '''
         if not precallback is None:
             precallback()
@@ -74,7 +89,7 @@ class SqlAdapter():
         self.sql(sql, params)
         if not postcallback is None:
             postcallback()
-        return self.conn
+        return self.cursor.fetchall()
         
     def delete(self, sql, params, precallback=None, postcallback=None):
         '''
