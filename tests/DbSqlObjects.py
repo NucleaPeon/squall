@@ -1,8 +1,9 @@
-import sys, os
+import sys, os, unittest
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
-import unittest
+import squallsql
+import adapters.squallsqlite3
 import squall
 
 class Test(unittest.TestCase):
@@ -20,21 +21,20 @@ class Test(unittest.TestCase):
     
     def testCreation(self):
         # Invalid Sql() object
-        self.assertRaises(squall.InvalidConditionException, 
-            squall.Sql, 'select', table='t', fields=['x', 'y', 'z'], conditions=['hello', 2])
+        print("Test: Creation of Sql Objects")
+        self.assertRaises(squall.InvalidSqlConditionException, 
+            squallsql.Sql, 'select', table='t', fields=['x', 'y', 'z'], conditions=['hello', 2])
         
         self.assertRaises(squall.InvalidSqlCommandException, 
-            squall.Sql, 'superselect', table='t')
-        
-        obj = squall.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
-        print(str(obj))
-#         self.assertEqual(str(obj), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
-#                          'Insert Sql object does not match with expected results')
-        
-        
+            squallsql.Sql, 'superselect', table='t')
+        basesql = squallsql.Sql
+        sqlite3sql = adapters.squallsqlite3.Sql
     
     def testSqlStatement(self):
-        pass
+        obj = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
+        print("Test: Representation of Sql Objects")
+        self.assertNotEqual(str(obj), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
+                         'Insert Sql object does not match with expected results')
     
     def testSelect(self):
         pass

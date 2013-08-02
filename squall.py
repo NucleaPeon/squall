@@ -17,8 +17,6 @@ ADAPTERS = {'sqlite3' : None,
             'postgres': None,
             'firebird': None}
 
-COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
-
 class Session(object):
     '''
     :Description:
@@ -167,10 +165,14 @@ class InvalidSqlCommandException(AdapterException):
     def __init(self, message):
         AdapterException.__init__(self, message)
         
+class InvalidSqlValueException(AdapterException):
+    def __init(self, message):
+        AdapterException.__init__(self, message)
+        
 class InvalidSqlWhereClauseException(AdapterException):
     def __init(self, message):
         AdapterException.__init__(self, message)
         
-class InvalidConditionException(AdapterException):
+class InvalidSqlConditionException(AdapterException):
     def __init(self, message):
         AdapterException.__init__(self, message)

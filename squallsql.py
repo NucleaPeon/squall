@@ -10,8 +10,12 @@ apply to all databases due to those differences.
 The database adapter should inherit this class and override the methods
 that have functionality that differ.
 
+This base class will return verbatim what is submitted, except lists
+will be parsed with commas
+
 If you want to use this class to produce sql strings, do it like this
 in your database adapter class:
+
 :Code:
     import squallsql
 
@@ -19,8 +23,10 @@ in your database adapter class:
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
         
-        
+    
 '''
+
+
 
 import squall
 
@@ -32,6 +38,9 @@ class Sql():
     is handled by the driver adapters.
     (Queue list of sql objects or strings)
     '''
+    
+    COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
+    
     def __init__(self, command, table, fields = ['*'], 
                  values = [], conditions = []):
         '''
@@ -41,10 +50,11 @@ class Sql():
         self.command = self.Command(command)
         self.table = table
         self.fields = fields
+        self.values = values
         self.conditions = conditions
         for c in conditions:
             if not isinstance(c, self.Condition):
-                raise InvalidConditionException(
+                raise squall.InvalidSqlConditionException(
                     '{} are not Condition objects'.format(
                         str(conditions)))
         
@@ -52,22 +62,13 @@ class Sql():
         #FIXME: Problem with this command is that it doesn't take into account
         # the "FROM" portion of queries and those which don't (UPDATE, INSERT)
         # Need to differentiate from "FROM", "SET", and "VALUES"
-        args = []
-        if self.command == 'INSERT':
-            fields = self.fields
-            if fields != '*':
-                fields = '({})'.format(', '.join(self.fields))
-            else: 
-                fields = ''
-            return "INSERT INTO {} {} VALUES ({})".format(
-                self.table, fields, )
         return "{} {} {} {} {}".format(self.command, self.fields, self.table,
-                                       self.conditions)
+                                       self.values, self.conditions)
     class Command():
         
         def __init__(self, command):
             self.command = command.upper()
-            if not self.command in COMMANDS:
+            if not self.command in Sql.COMMANDS:
                 raise squall.InvalidSqlCommandException(
                     'Command {} is not a valid command to issue'.format(
                         str(command)))
@@ -112,6 +113,16 @@ class Sql():
             else:
                 return "IF NOT EXISTS"
         
+    class Values():
+        def __init__(self, values):
+            if not type(values) in [list, tuple]:
+                raise squall.InvalidSqlValueException(
+                    'Values must be in tuple or list format') 
+            self.values = values
+            
+        def __repr__(self):
+            return ', '.join(values)
+        
     class Table():
         
         def __init__(self, table):
@@ -126,6 +137,8 @@ class Sql():
             # A Wildcard eliminates the need for any additional fields
             if '*' in args:
                 args = '*'
+            if isinstance(list, args):
+                args = ', '.join(args) # Convert to string
             self.fields = args
             
         def __repr__(self):

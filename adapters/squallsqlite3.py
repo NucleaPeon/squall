@@ -5,6 +5,8 @@
 # Date:   July 29 2013
 #
 
+import squallsql
+
 class SqlAdapter():
     '''
     API for calling sqlite3
@@ -125,3 +127,7 @@ class SqlAdapter():
         
     def rollback(self):
         raise self.module.IntegrityError()
+    
+class Sql(squallsql.Sql):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
