@@ -37,10 +37,8 @@ Sql Server
 ---------
 ```
 import squall
-
-self.sqlobj = squall.Session().connect('rfid', adapter='sqlserver', trusted=True, driver='SQL Server')
+self.sqlobj = squall.Session().connect('myDatabase', adapter='sqlserver', trusted=True, driver='SQL Server')
 self.module = squall.db('sqlserver')
-self.sqlobj.[command](sql, param)
 ```
 
 ( PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION... )
@@ -51,9 +49,7 @@ Sqlite3
 ---------
 ```
 import squall
-self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
+self.sqlobj = squall.Session().connect('my.db', adapter='sqlite3')
 self.module = squall.db('sqlite3')
-
-self.sqlobj.[command](sql, param)
 ```
  
