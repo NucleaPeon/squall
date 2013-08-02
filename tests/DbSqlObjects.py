@@ -35,15 +35,19 @@ class Test(unittest.TestCase):
             squallsql.Sql, 'superselect', table='t')
         basesql = squallsql.Sql
         
-        
-#         print('Base Sql {} -- Sqlite3 Sql {}'.format(str(basesql), str(sqlite3sql)))
     
     def testSqlStatement(self):
         obj = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
-        print("Test: Representation of Sql Objects")
+        print("Test: Insert Sql Object")
         self.assertNotEqual(str(obj), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
                          'Insert Sql object does not match with expected results')
-    
+        self.assertNotEqual(Test.testsql, "INSERT INTO ['x', 'y', 'z'] VALUES [5, 7, 9]", 'Sqlite3 Sql Insert object'
+                         ' is using inaccurate sql string')
+        self.assertEqual(str(Test.sqlite3sql), "INSERT INTO ['x', 'y', 'z'] VALUES [5, 7, 9]", 'Sqlite3 does not'
+                         ' match up with expected Insert object representation')
+        
+        
+        
     def testSelect(self):
         pass
     
