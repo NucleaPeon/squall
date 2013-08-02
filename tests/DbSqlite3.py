@@ -24,10 +24,7 @@ class Test(unittest.TestCase):
     def tearDown(self):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())
         self.sqlobj.disconnect()
-        self.sqlobj = None
-        self.s = None
         del self.sqlobj
-        del self.s
         
     def testSqliteInsert(self):
         print("Test: Sqlite3 Insert")

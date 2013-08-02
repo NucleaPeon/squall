@@ -157,96 +157,7 @@ def db(db_type):
         
     return module
 
-class Sql():
-    
-    def __init__(self, command, table, fields = ['*'], conditions = None):
-        '''
-        :Conditions:
-        '''
-        self.command = Command(command)
-        self.table = table
-        self.fields = fields
-        self.conditions = conditions
-        
-    def __repr__(self):
-        #FIXME: Problem with this command is that it doesn't take into account
-        # the "FROM" portion of queries and those which don't (UPDATE, INSERT)
-        # Need to differentiate from "FROM", "SET", and "VALUES"
-        return "{} {} {} {} {}".format(self.command, self.fields, self.table,
-                                       self.conditions)
-        
-    class Command():
-        
-        def __init__(self, command):
-            if not command in COMMANDS:
-                raise InvalidSqlCommandException(
-                    'Command {} is not a valid command to issue'.format(
-                        str(command)))
-            self.command = command.upper()
-            
-        def __repr__(self):
-            if self.command == 'INSERT':
-                return "INSERT INTO"
-            else:
-                return self.command 
-            
-    class Condition():
-        def __init__(self):
-            pass
-        
-        def __repr__(self):
-            return ''
-            
-    class Where(Condition):
-        
-        def __init__(self, field, operator, value, condition=None):
-            '''
-            TODO
-            :Parameters:
-                - value; string: can be an Sql object IF AND ONLY IF
-                  command == 'SELECT'
-                - condition: Condition object: append a condition to the 
-                  query/non-query
-            '''
-            self.field = field
-            self.operator = operator
-            if type(value) == Command:
-                if Command.command.upper() == "SELECT":
-                    print("Do stuff")
-                else:
-                    raise InvalidSqlWhereClauseException(
-                        'Non-Queries not allowed in WHERE Clause')
-            self.value = value
-            
-    class Exists(Condition):
-        
-        def __init__(self, exists=True):
-            self.exists = exists
-            
-        def __repr__(self):
-            if self.exists:
-                return "IF EXISTS"
-            else:
-                return "IF NOT EXISTS"
-        
-    class Table():
-        
-        def __init__(self, table):
-            self.table == table
-            
-        def __repr__(self):
-            return table
-        
-    class Fields():
-        
-        def __init__(self, *args):
-            # A Wildcard eliminates the need for any additional fields
-            if '*' in args:
-                args = '*'
-            self.fields = args
-            
-        def __repr__(self):
-            return ', '.join(self.fields)
+
     
 class AdapterException(Exception):
     def __init__(self, message):
@@ -257,5 +168,9 @@ class InvalidSqlCommandException(AdapterException):
         AdapterException.__init__(self, message)
         
 class InvalidSqlWhereClauseException(AdapterException):
+    def __init(self, message):
+        AdapterException.__init__(self, message)
+        
+class InvalidConditionException(AdapterException):
     def __init(self, message):
         AdapterException.__init__(self, message)
