@@ -40,7 +40,8 @@ class Test(unittest.TestCase):
         insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
         
         #select = squallsql.Sql('select', table='t', fields=['x', 'y'], 
-        #                 squallsql.Where('x', '=', '5'))#
+        #                       squallsql.Where('x', '=', '5'))
+        print(str(squallsql.Where('x', '=', '5', [squallsql.Where('y', '=', '7')])))
     
     def testInsert(self):
         insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])

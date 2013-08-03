@@ -85,37 +85,53 @@ class Condition():
         
 class Where(Condition):
     
-    def __init__(self, field, operator, value, condition=None):
+    def __init__(self, field, operator, value, conditions=[]):
         '''
         TODO
         :Parameters:
-            - value; string: can be an Sql object IF AND ONLY IF
+            - value: string; can be an Sql object IF AND ONLY IF
               command == 'SELECT', otherwise expects a string
               representation
-            - condition: Condition object: append a condition to the 
-              query/non-query
+            - conditions: tuple; Either: 
+                - A list of strings, which are joined to create one string
+                - A list of Where or Select objects, where the representation of each
+                  additional object is prepended with an "AND" keyword
+                (Where('x', '=', '5'), Where('y', '=', '7')) would equal:
+                WHERE x = 5 AND y = 7
+                If a substring was placed into the condition, it could look like this:
+                (Where('x', '=', '5'), Select('t', 'y', Where('y', '=', '7')))
+                >> WHERE x = 5 AND (SELECT y FROM t WHERE y = 7)
+                
         '''
         self.field = field
         self.operator = operator
         if type(value) == Command:
-            if not Command.command == "SELECT":
+            if not value.command == "SELECT":
                 raise squall.InvalidSqlWhereClauseException(
-                    'Non-Queries not allowed in WHERE Clause')
-        self.value = value
-        # if condition is not used, blank it so it does not affect query.
-        # if condition is a Command 
-        self.condition = condition
-        if isinstance(Command, condition):
-            if condition.command == 'SELECT':
-                self.condition = str(condition)
+                    'Non-Queries not allowed in WHERE Clause') 
             else:
-                self.condition = ''
-        if condition is None:
-            self.condition = ''
+                self.value = "({})".format(str(value))
+        elif isinstance(value, str):
+            self.value = value
+        else:
+            raise squall.InvalidSqlWhereClauseException(
+                        'Invalid WHERE Value {}'.format(value))
+        
+        if len(conditions) > 0:
+            if isinstance(conditions[0], str):
+                self.conditions = ' '.join(conditions)
+            else:
+                if len(conditions) > 0:  
+                    self.conditions = ' '.join(
+                                str(cond) for cond in conditions).replace("WHERE", "AND")
+                else:
+                    self.conditions = '' 
+        else:
+            self.conditions = ''
         
     def __repr__(self):
-        return "WHERE {} {} {} {}".format(self.field, self.operator,
-                                          self.value, self.condition)
+        return " WHERE {} {} {} {}".format(self.field, self.operator,
+                                          self.value, self.conditions)
         
 class Exists(Condition):
     
