@@ -47,13 +47,13 @@ class Sql():
         :Conditions:
         '''
         
-        self.command = self.Command(command.upper())
+        self.command = Command(command.upper())
         self.table = table
         self.fields = fields
         self.values = values
         self.conditions = conditions
         for c in conditions:
-            if not isinstance(c, self.Condition):
+            if not isinstance(c, Condition):
                 raise squall.InvalidSqlConditionException(
                     '{} are not Condition objects'.format(
                         str(conditions)))
@@ -64,82 +64,97 @@ class Sql():
         # Need to differentiate from "FROM", "SET", and "VALUES"
         return "{} {} {} {} {}".format(self.command, self.fields, self.table,
                                        self.values, self.conditions)
-    class Command():
+class Command():
+    
+    def __init__(self, command):
+        self.command = command
+        if not self.command in Sql.COMMANDS:
+            raise squall.InvalidSqlCommandException(
+                'Command {} is not a valid command to issue'.format(
+                    str(command)))
         
-        def __init__(self, command):
-            self.command = command
-            if not self.command in Sql.COMMANDS:
-                raise squall.InvalidSqlCommandException(
-                    'Command {} is not a valid command to issue'.format(
-                        str(command)))
-            
-        def __repr__(self):
-            return self.command
-            
-    class Condition():
-        def __init__(self):
-            pass
+    def __repr__(self):
+        return self.command
         
-        def __repr__(self):
-            return ''
-            
-    class Where(Condition):
+class Condition():
+    def __init__(self):
+        pass
+    
+    def __repr__(self):
+        return ''
         
-        def __init__(self, field, operator, value, condition=None):
-            '''
-            TODO
-            :Parameters:
-                - value; string: can be an Sql object IF AND ONLY IF
-                  command == 'SELECT'
-                - condition: Condition object: append a condition to the 
-                  query/non-query
-            '''
-            self.field = field
-            self.operator = operator
-            if type(value) == Command:
-                if not Command.command == "SELECT":
-                    raise squall.InvalidSqlWhereClauseException(
-                        'Non-Queries not allowed in WHERE Clause')
-            self.value = value
-            
-    class Exists(Condition):
-        
-        def __init__(self, exists=True):
-            self.exists = exists
-            
-        def __repr__(self):
-            if self.exists:
-                return "IF EXISTS"
+class Where(Condition):
+    
+    def __init__(self, field, operator, value, condition=None):
+        '''
+        TODO
+        :Parameters:
+            - value; string: can be an Sql object IF AND ONLY IF
+              command == 'SELECT', otherwise expects a string
+              representation
+            - condition: Condition object: append a condition to the 
+              query/non-query
+        '''
+        self.field = field
+        self.operator = operator
+        if type(value) == Command:
+            if not Command.command == "SELECT":
+                raise squall.InvalidSqlWhereClauseException(
+                    'Non-Queries not allowed in WHERE Clause')
+        self.value = value
+        # if condition is not used, blank it so it does not affect query.
+        # if condition is a Command 
+        self.condition = condition
+        if isinstance(Command, condition):
+            if condition.command == 'SELECT':
+                self.condition = str(condition)
             else:
-                return "IF NOT EXISTS"
+                self.condition = ''
+        if condition is None:
+            self.condition = ''
         
-    class Values():
-        def __init__(self, values):
-            if not type(values) in [list, tuple]:
-                raise squall.InvalidSqlValueException(
-                    'Values must be in tuple or list format') 
-            self.values = values
-            
-        def __repr__(self):
-            return ', '.join(values)
+    def __repr__(self):
+        return "WHERE {} {} {} {}".format(self.field, self.operator,
+                                          self.value, self.condition)
         
-    class Table():
+class Exists(Condition):
+    
+    def __init__(self, exists=True):
+        self.exists = exists
         
-        def __init__(self, table):
-            self.table == table
-            
-        def __repr__(self):
-            return table
+    def __repr__(self):
+        if self.exists:
+            return "IF EXISTS"
+        else:
+            return "IF NOT EXISTS"
+    
+class Values():
+    def __init__(self, values):
+        if not type(values) in [list, tuple]:
+            raise squall.InvalidSqlValueException(
+                'Values must be in tuple or list format') 
+        self.values = values
         
-    class Fields():
+    def __repr__(self):
+        return ', '.join(values)
+    
+class Table():
+    
+    def __init__(self, table):
+        self.table == table
         
-        def __init__(self, *args):
-            # A Wildcard eliminates the need for any additional fields
-            if '*' in args:
-                args = '*'
-            if isinstance(list, args):
-                args = ', '.join(args) # Convert to string
-            self.fields = args
-            
-        def __repr__(self):
-            return ', '.join(self.fields)
+    def __repr__(self):
+        return table
+    
+class Fields():
+    
+    def __init__(self, *args):
+        # A Wildcard eliminates the need for any additional fields
+        if '*' in args:
+            args = '*'
+        if isinstance(list, args):
+            args = ', '.join(args) # Convert to string
+        self.fields = args
+        
+    def __repr__(self):
+        return ', '.join(self.fields)

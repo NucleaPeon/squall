@@ -89,19 +89,18 @@ class SqlAdapter():
         conn = self.sql(sql, params)
         if not postcallback is None:
             postcallback()
-        return conn
-        
-    def select(self, sql, params, precallback=None, postcallback=None):
+        return conn        
+    
+    def select(self, selectobject, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any select specific code is required,
-        put it here.
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        self.sql(str(selectobject))
+        selectobject.lastqueryresults = self.cursor.fetchall() 
         if not postcallback is None:
             postcallback()
-        return self.cursor.fetchall()
+        return selectobject.lastqueryresults
         
     def delete(self, sql, params, precallback=None, postcallback=None):
         '''
@@ -148,7 +147,7 @@ class Select(squallsql.Sql):
         self.table = table
         self.fields = fields
         self.conditions = conditions
-        
+        self.lastqueryresults = ''
         
     def __repr__(self):
         return '''{} INTO {} VALUES {}'''.format(self.command, 

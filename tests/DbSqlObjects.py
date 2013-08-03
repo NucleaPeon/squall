@@ -33,27 +33,26 @@ class Test(unittest.TestCase):
         
         self.assertRaises(squall.InvalidSqlCommandException, 
             squallsql.Sql, 'superselect', table='t')
-        basesql = squallsql.Sql
+        # basesql = squallsql.Sql
+                
+    def testSelect(self):
+        print("Test: Select Sql Object")
+        insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
+        
+        #select = squallsql.Sql('select', table='t', fields=['x', 'y'], 
+        #                 squallsql.Where('x', '=', '5'))#
     
-    def testSqlStatement(self):
-        obj = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
+    def testInsert(self):
+        insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
+        selectobj = squallsqlite3.Select('t', ['x', 'y'], squallsql.Condition())
         print("Test: Insert Sql Object")
-        self.assertNotEqual(str(obj), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
+        self.assertNotEqual(str(insert), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
                          'Insert Sql object does not match with expected results')
         self.assertNotEqual(Test.testsql, "INSERT INTO ['x', 'y', 'z'] VALUES [5, 7, 9]", 'Sqlite3 Sql Insert object'
                          ' is using inaccurate sql string')
         self.assertEqual(str(Test.sqlite3sql), "INSERT INTO t (x, y, z) VALUES (5, 7, 9)", 'Sqlite3 does not'
                          ' match up with expected Insert object representation')
-        print("Test: Select Sql Object")
         
-        selectobj = squallsqlite3.Select('t', ['x', 'y'], squallsql.Sql.Condition())
-        
-        
-    def testSelect(self):
-        pass
-    
-    def testInsert(self):
-        pass
     
     def testDelete(self):
         pass
