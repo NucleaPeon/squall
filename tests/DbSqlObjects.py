@@ -16,12 +16,12 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
         self.module = squall.db('sqlite3')
-        self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())
-        self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));', ())
+        self.sqlobj.sql('DROP TABLE IF EXISTS t;')
+        self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
         
         
     def tearDown(self):
-        self.sqlobj.sql('DROP TABLE IF EXISTS t;', ())
+        self.sqlobj.sql('DROP TABLE IF EXISTS t;')
         self.sqlobj.disconnect()
         del self.sqlobj
     
@@ -39,13 +39,16 @@ class Test(unittest.TestCase):
         print("Test: Select Sql Object")
         insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
         
-        #select = squallsql.Sql('select', table='t', fields=['x', 'y'], 
-        #                       squallsql.Where('x', '=', '5'))
-        print(str(squallsql.Where('x', '=', '5', [squallsql.Where('y', '=', '7')])))
+        select = squallsqlite3.Select('t', ['x', 'y'], 
+                               squallsql.Where('x', '=', '5'))
+        self.assertEqual(str(select).rstrip(), "SELECT x, y FROM t WHERE x = 5", 'Select statement not equal to expected value')
+        print("Test: Results of Select Statement on sqlite3")
+        asdf = self.sqlobj.select(select)
+        
     
     def testInsert(self):
         insert = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
-        selectobj = squallsqlite3.Select('t', ['x', 'y'], squallsql.Condition())
+        selectobj = squallsqlite3.Select('t', ['x', 'y'])
         print("Test: Insert Sql Object")
         self.assertNotEqual(str(insert), 'INSERT INTO t (x, y, z) VALUES 5, 7, 9)',
                          'Insert Sql object does not match with expected results')

@@ -117,8 +117,8 @@ class SqlAdapter():
     def sqldate(self):
         return self.select('''SELECT date('now');''', ())
     
-    def sql(self, sql, params):
-        self.cursor.execute(sql, params)
+    def sql(self, sql):
+        self.cursor.execute(sql)
         return self.conn
     
     def commit(self):
@@ -142,13 +142,18 @@ class Insert(squallsql.Sql):
                                 ', '.join(str(x) for x in self.values))
         
 class Select(squallsql.Sql):
-    def __init__(self, table, fields, conditions=[]):
+    def __init__(self, table, fields, conditions=None):
         super().__init__('SELECT', table, fields, conditions)
         self.table = table
         self.fields = fields
-        self.conditions = conditions
+        if isinstance(conditions, squallsql.Where):
+            self.conditions = conditions
+        elif conditions is None: 
+            self.conditions = ''
+        else:
+            self.conditions = conditions
         self.lastqueryresults = ''
         
     def __repr__(self):
-        return '''{} INTO {} VALUES {}'''.format(self.command, 
-            self.fields, self.values)
+        return '''SELECT {} FROM {}{}'''.format( 
+            ', '.join(self.fields), self.table, repr(self.conditions))
