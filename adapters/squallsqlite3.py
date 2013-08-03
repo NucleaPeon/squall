@@ -131,6 +131,23 @@ class SqlAdapter():
 class Insert(squallsql.Sql):
     def __init__(self, table, fields, values):
         super().__init__('INSERT', table, fields, values)
+        self.table = table
+        self.fields = fields
+        self.values = values
+        
+    def __repr__(self):
+        if len(self.fields) > 0:
+            self.fields = "{}{}{}".format("(", ', '.join(self.fields), ")")
+        return "INSERT INTO {} {} VALUES ({})".format(self.table, 
+                                self.fields,
+                                ', '.join(str(x) for x in self.values))
+        
+class Select(squallsql.Sql):
+    def __init__(self, table, fields, conditions=[]):
+        super().__init__('SELECT', table, fields, conditions)
+        self.table = table
+        self.fields = fields
+        self.conditions = conditions
         
         
     def __repr__(self):

@@ -4,14 +4,14 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import squallsql
-import adapters.squallsqlite3
+import adapters.squallsqlite3 as squallsqlite3
 import squall
 
 class Test(unittest.TestCase):
     
     testsql = squallsql.Sql('insert', table='t', 
                                      fields=['x', 'y', 'z'], values=[5, 7, 9])
-    sqlite3sql = adapters.squallsqlite3.Insert('t', ['x', 'y', 'z'], [5, 7, 9])
+    sqlite3sql = squallsqlite3.Insert('t', ['x', 'y', 'z'], [5, 7, 9])
     
     def setUp(self):
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
@@ -34,7 +34,6 @@ class Test(unittest.TestCase):
         self.assertRaises(squall.InvalidSqlCommandException, 
             squallsql.Sql, 'superselect', table='t')
         basesql = squallsql.Sql
-        
     
     def testSqlStatement(self):
         obj = squallsql.Sql('insert', table='t', fields=['x', 'y', 'z'], values=[5, 7, 9])
@@ -43,9 +42,11 @@ class Test(unittest.TestCase):
                          'Insert Sql object does not match with expected results')
         self.assertNotEqual(Test.testsql, "INSERT INTO ['x', 'y', 'z'] VALUES [5, 7, 9]", 'Sqlite3 Sql Insert object'
                          ' is using inaccurate sql string')
-        self.assertEqual(str(Test.sqlite3sql), "INSERT INTO ['x', 'y', 'z'] VALUES [5, 7, 9]", 'Sqlite3 does not'
+        self.assertEqual(str(Test.sqlite3sql), "INSERT INTO t (x, y, z) VALUES (5, 7, 9)", 'Sqlite3 does not'
                          ' match up with expected Insert object representation')
+        print("Test: Select Sql Object")
         
+        selectobj = squallsqlite3.Select('t', ['x', 'y'], squallsql.Sql.Condition())
         
         
     def testSelect(self):
