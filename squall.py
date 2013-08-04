@@ -105,28 +105,6 @@ class Session(object):
     def select(self, db_type, db_name, db_host, sql, *args):
         return self.pool[db_host][db_type][db_name].select(sql, tuple(args))
     
-    def sqldate(self, db_type, db_name, db_host):
-        '''
-        :Description:
-            This is essentially a test method which grabs the date from a temp 
-            table and returns it in a select statement. 
-            
-            This method should not be used except to test that a proper 
-            connection has been established to the desired database.
-            
-            If you do not wish to implement this method, an 
-            AdapterException will be thrown.
-            
-            Note: One area of contention is that this captures ALL Exceptions.
-            TODO: Either be more specific on what exception occured, or find 
-            the exact exceptions I need to watch for. (ugly)
-        '''
-        try:
-            self.pool[db_host][db_type][db_name].date()
-        except Exception as aE:
-            raise AdapterException(
-                'SQL date() method not implemented\n{}'.format(
-                    str(aE)))
     
 def db(db_type):
     '''

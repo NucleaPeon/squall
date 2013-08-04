@@ -62,13 +62,16 @@ class Sql(Squall):
         check more than an actually used class object.
     
     :Parameters:
-        - command: string; All uppercase, currently defined commands are:
+        - command: Command object; use the following strings to initialize object
+          successfully. NOTE: strings are NOT case sensitive for Command(), but ARE
+          for other components, so only use Command() objects 
             - SELECT
             - INSERT
             - UPDATE
             - DELETE
             - CREATE
             - DROP
+          
             
           Any more commands that sql uses can be added to the Sql.COMMANDS
           list, otherwise an InvalidSqlConditionException is raised.
@@ -83,20 +86,18 @@ class Sql(Squall):
     '''
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
-    def __init__(self, command='', table='', fields = ['*'], 
+    def __init__(self, command='', table=None, fields = None, 
                  values = [], conditions = []):
         
-        super().__init__(self)
-        self.command = Command(command.upper())
-        if not self.command in Sql.COMMANDS:
+        super().__init__()
+        self.command = Command(command)
+        if not str(self.command) in Sql.COMMANDS:
             raise squall.InvalidSqlCommandException(
                 'Command {} is not a valid command to issue'.format(
                     str(command)))
+            
         self.table = table
-        if len(fields) == 0:
-            self.fields = ['*']
-        else:
-            self.fields = fields
+        self.fields = fields
         self.values = values
         self.conditions = conditions
         for c in conditions:
@@ -123,7 +124,15 @@ class Sql(Squall):
         # Need to differentiate from "FROM", "SET", and "VALUES"
         return "{} {} {} {} {}".format(self.command, str(self.fields), self.table,
                                        str(self.values), str(self.conditions))
+
+class Command(Squall):
+    def __init__(self, command):
+        super().__init__()
+        self.command = str(command).upper()
         
+    def __repr__(self):
+        return self.command
+            
 class Condition(Squall):
     def __init__(self, conditions = []):
         super().__init__()
@@ -174,8 +183,10 @@ class Where(Condition):
         super().__init__()
         self.field = field
         self.operator = operator
-        if type(value) == Sql:
-            if not value.command == "SELECT":
+        if type(value) == Sql or type(value) == Value:
+            if type(value) == Value:
+                self.value = str(value)
+            elif not value.command == "SELECT":
                 raise squall.InvalidSqlWhereClauseException(
                     'Non-Queries not allowed in WHERE Clause') 
             else:
@@ -199,7 +210,7 @@ class Where(Condition):
             self.conditions = ''
         
     def __repr__(self):
-        return " WHERE {} {} {} {}".format(self.field, self.operator,
+        return "WHERE {} {} {} {}".format(self.field, self.operator,
                                           self.value, self.conditions)
         
 class Exists(Condition):
@@ -209,9 +220,21 @@ class Exists(Condition):
         tables or columns.
     '''
     
-    def __init__(self, exists=True):
+    def __init__(self, exists=True, conditions = []):
         super().__init__()
         self.exists = exists
+        if len(conditions) > 0:
+            if isinstance(conditions[0], str): # String list:
+                self.conditions = ' '.join(conditions)
+            else:
+                if len(conditions) > 0:  
+                    self.conditions = ' '.join(
+                                str(cond) for cond in conditions).replace("IF EXISTS", "AND")
+                    self.conditions.replce('IF NOT EXISTS', "AND")
+                else:
+                    self.conditions = '' 
+        else:
+            self.conditions = ''
         
     def __repr__(self):
         if self.exists:
@@ -231,12 +254,25 @@ class Value(Squall):
         the value object should be a datetime object, which will get
         converted to the appropriate string or methodcall by the database
         adapter.
+        
+        For instance: if type(value) == str in python,
+            output: \'\'\' 'value' \'\'\' (quoted)
+        
+        if type(value) == datetime in python, 
+            output: \'\'\'strftime('%Y-%m-%d %H:%M:%S', '2004-01-01 02:34:56')\'\'\'
+        
+        where '2004-01-01 02:34:56' is the output of a str(datetime) object type
     '''
-    def __init__(self, value, type): 
+    def __init__(self, value): 
         self.value = value
+        self.type = type(value)
         
     def __repr__(self):
-        return str(self.value)
+        if self.type == int:
+            return str(self.value)
+        elif self.type == str:
+            return "'{}'".format(str(self.value))
+        return "{}: {}".format(self.value, self.type)
     
 class Table(Squall):
     '''
@@ -244,10 +280,10 @@ class Table(Squall):
         A class that represents a table name.
     '''
     def __init__(self, table):
-        self.table == table
+        self.table = table
         
     def __repr__(self):
-        return table
+        return str(self.table)
     
 class Fields(Squall):
     '''
@@ -259,13 +295,22 @@ class Fields(Squall):
     
     def __init__(self, *args):
         # A Wildcard eliminates the need for any additional fields
-        if '*' in args:
-            args = '*'
-        if isinstance(list, args):
-            args = ', '.join(args) # Convert to string
+        if len(args) == 0:
+            args = [''] # Empty, such as in INSERT statements without fields
+        elif '*' in args:
+            args = ['*']
+        elif isinstance(list, args):
+            args = ', '.join(args) # Cosvert to string
+        elif isintance(tuple, args):
+            args = ', '.join(args)
+        else:
+            raise InvalidSqlValueException(
+                    'Value is neither a wildcard char nor a list or tuple')
         self.fields = args
         
     def __repr__(self):
+        if type(self.fields) == str:
+            return self.fields
         return ', '.join(self.fields)
     
 class Transaction(Squall):

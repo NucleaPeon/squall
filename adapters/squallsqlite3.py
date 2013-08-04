@@ -5,9 +5,33 @@
 # Date:   July 29 2013
 #
 
+'''
+squallsqlite3 is the Squall SqlAdapter class for sqlite3 databases
+
+Basic Overview:
+    Do not call the adapter methods directly.
+    
+    Use squallsqlite3.Insert()
+        instead of 
+    squallsqlite3.SqlAdapter.insert()
+    
+    The reason for this is that the adapter's insert() method also controls
+    how the sql interacts with the databaser via the connection and driver.
+    Using the TitleCase classes that are globally available, you interact
+    with dynamic objects that will not cause damage to the database unless
+    used in a Transaction object, which is safer and better practice,
+    in addition to allowing you to handle exceptions from a centralized
+    place.
+
+
+'''
+
+import sys, os
+sys.path.append(os.path.join('..'))
+
 import squallsql
 
-class SqlAdapter():
+class SqlAdapter(squallsql.Squall):
     '''
     API for calling sqlite3
     
@@ -72,7 +96,7 @@ class SqlAdapter():
             # Submit parameters as a non-required dictionary
             precallback(**{'method':self.insert, 'class':self, 
                            'sql':sql})
-        conn = self.sql(sql, params)
+        conn = self.sql(sqlobject)
         if not postcallback is None:
             postcallback(**{'method':self.insert, 'class':self, 
                            'sql':sql})
@@ -127,32 +151,37 @@ class SqlAdapter():
         raise self.module.IntegrityError()
     
 class Insert(squallsql.Sql):
-    def __init__(self, table, fields, values):
-        super().__init__('INSERT', table, fields, values)
+    def __init__(self, table, field, values):
+        super().__init__('INSERT', table, field, values)
         self.table = table
-        self.fields = fields
+        self.field = field
         self.values = values
         
     def __repr__(self):
-        if len(self.fields) > 0:
-            self.fields = "{}{}{}".format("(", ', '.join(self.fields), ")")
-        return "INSERT INTO {} {} VALUES ({})".format(self.table, 
+        return "INSERT INTO {}{} VALUES ({})".format(self.table, 
                                 self.fields,
                                 ', '.join(str(x) for x in self.values))
         
 class Select(squallsql.Sql):
-    def __init__(self, table, fields, conditions=None):
-        super().__init__('SELECT', table, fields, conditions)
+    def __init__(self, table, fields, condition=None):
+        super().__init__('SELECT', table, fields, condition)
         self.table = table
         self.fields = fields
-        if isinstance(conditions, squallsql.Where):
-            self.conditions = conditions
+        if isinstance(condition, squallsql.Where):
+            self.condition = condition
         elif conditions is None: 
-            self.conditions = ''
+            self.condition = ''
         else:
-            self.conditions = conditions
+            self.condition = condition
         self.lastqueryresults = ''
         
     def __repr__(self):
-        return '''SELECT {} FROM {}{}'''.format( 
-            ', '.join(self.fields), self.table, repr(self.conditions))
+        return '''SELECT {} FROM {} {}'''.format( 
+             self.fields, self.table, self.condition) 
+        
+class Verbatim(squallsql.Sql):
+    # TODO
+    def __init__(self, sql, params):
+        self.sql = sql
+        self.params = params
+        
