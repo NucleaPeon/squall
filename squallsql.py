@@ -221,25 +221,41 @@ class Exists(Condition):
     
 class Value(Squall):
     '''
+    :Description:
+        Value() is a way to ensure the database types are met.
+        I am making an executive decision to force database types
+        into native python types and vice versa.
+        Therefore, if you make a Select command using squall, in the
+        results it will return a pythonic date object (datetime module)
+        instead of a string. Likewise, when calling an Insert() object,
+        the value object should be a datetime object, which will get
+        converted to the appropriate string or methodcall by the database
+        adapter.
     '''
-    def __init__(self, value, type):
-        if not type(values) in [list, tuple]:
-            raise squall.InvalidSqlValueException(
-                'Values must be in tuple or list format') 
-        self.values = values
+    def __init__(self, value, type): 
+        self.value = value
         
     def __repr__(self):
-        return ', '.join(values)
+        return str(self.value)
     
-class Table():
-    
+class Table(Squall):
+    '''
+    :Description:
+        A class that represents a table name.
+    '''
     def __init__(self, table):
         self.table == table
         
     def __repr__(self):
         return table
     
-class Fields():
+class Fields(Squall):
+    '''
+    :Description:
+        Class representation of field lists in a class for more
+        functionality. Represented by a comma-delimited string
+        of values
+    '''
     
     def __init__(self, *args):
         # A Wildcard eliminates the need for any additional fields
@@ -252,6 +268,16 @@ class Fields():
     def __repr__(self):
         return ', '.join(self.fields)
     
-class Transaction():
-    def __init__(self):
-        pass
+class Transaction(Squall):
+    '''
+    :Description:
+        Transaction object that takes a list of Squall objects and will
+        commit() or rollback() based on whether one failure is detected,
+        or all objects / strings run without error.
+        
+    '''
+    def __init__(self, *args):
+        self.tobjects = args
+        
+    def __repr__(self):
+        return ', '.join(self.tobjects)
