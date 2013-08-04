@@ -96,7 +96,7 @@ class SqlAdapter(squallsql.Squall):
             # Submit parameters as a non-required dictionary
             precallback(**{'method':self.insert, 'class':self, 
                            'sql':sql})
-        conn = self.sql(sqlobject)
+        conn = self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback(**{'method':self.insert, 'class':self, 
                            'sql':sql})
@@ -125,20 +125,17 @@ class SqlAdapter(squallsql.Squall):
             postcallback()
         return selectobject.lastqueryresults
         
-    def delete(self, sql, params, precallback=None, postcallback=None):
+    def delete(self, sqlobject, precallback=None, postcallback=None):
         '''
         Go directly to sql(), if any delete specific code is required,
         put it here.
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback()
         return self.conn
-    
-    def sqldate(self):
-        return self.select('''SELECT date('now');''', ())
     
     def sql(self, sql):
         self.cursor.execute(sql)
@@ -167,21 +164,52 @@ class Select(squallsql.Sql):
         super().__init__('SELECT', table, fields, condition)
         self.table = table
         self.fields = fields
+        self.existsflag = False
         if isinstance(condition, squallsql.Where):
             self.condition = condition
-        elif conditions is None: 
+        elif isinstance(condition, squallsql.Exists):
+            # FIXME: Bad coding practice, may get rid of
+            self.existsflag = True
+        else: 
             self.condition = ''
-        else:
-            self.condition = condition
         self.lastqueryresults = ''
         
     def __repr__(self):
+        if self.existsflag:
+            return '''SELECT EXISTS({} FROM {} {})'''.format( 
+             self.fields, self.table)
+            
         return '''SELECT {} FROM {} {}'''.format( 
              self.fields, self.table, self.condition) 
         
+class Delete(squallsql.Sql):
+    def __init__(self, table, condition=None):
+        super().__init__('DELETE', table, condition)
+        self.table = table
+        if isinstance(condition, squallsql.Where):
+            self.condition = condition
+        else:
+            self.condition = ''
+        
+    def __repr__(self):
+        return "DELETE FROM {} {}".format(self.table, self.condition)
+        
 class Verbatim(squallsql.Sql):
+    '''
+    :Description:
+        Verbatim is a class whose purpose is to pipe direct
+        string sql commands into the database driver. This is to
+        allow customization by preference of the developer.
+        
+        If params are a tuple that has a lenth > 0, this class checks
+        the sql for ? characters and replaces each ? with the parameter
+        based on order: first ? == first parameter (params[0])
+        
+        If more or fewer ?'s exist than params has in length, 
+        an error is raised. 
+    '''
     # TODO
-    def __init__(self, sql, params):
+    def __init__(self, sql, params=()):
         self.sql = sql
         self.params = params
         

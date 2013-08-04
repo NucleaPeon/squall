@@ -22,6 +22,10 @@ class Test(unittest.TestCase):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;')
         self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
         
+        self.sqlselect = squallsqlite3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
+        self.sqlinsert = squallsqlite3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        self.sqldelete = squallsqlite3.Delete(Table('t'), Where('x', '=', Value(1)))
+        print(str(self.sqldelete))
 
     def tearDown(self):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;')
@@ -30,23 +34,22 @@ class Test(unittest.TestCase):
         
     def testSqliteInsert(self):
         print("Test: Sqlite3 Insert")
-        sqlinsert = squallsqlite3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
-        self.assertEqual(str(sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
-        assert self.sqlobj.insert(str(sqlinsert)), 'Failed Sqlite3 Insert'
+        self.assertEqual(str(self.sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
+        assert self.sqlobj.insert(str(self.sqlinsert)), 'Failed Sqlite3 Insert'
         print("Test: Select Insert Statement")
-        sqlselect = squallsqlite3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
-        assert self.sqlobj.select(sqlselect), 'Select Statement Errored'
-#         
-#     def testSqliteDelete(self):
-#         print("Test: Sqlite3 Insert")
-#         assert self.sqlobj.insert('INSERT INTO t VALUES (?, ?, ?)', (1, 2, 3,)), 'Failed Sqlite3 Insert'
-#         self.sqlobj.commit()
-#         print("Test: Select Insert Statement")
-#         rows = self.sqlobj.select('SELECT * FROM t WHERE x = ?', (1,))
-#         assert len(rows) > 0, 'Select Statement Errored'
-#         print("Test: Delete Insert")
-#         assert self.sqlobj.delete('DELETE FROM t WHERE x = ?', (1,)), 'Delete Statement Errored'
-#         self.sqlobj.commit()
+        assert self.sqlobj.select(self.sqlselect), 'Select Statement Errored'
+         
+    def testSqliteDelete(self):
+        print("Test: Sqlite3 Insert")
+        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
+        self.sqlobj.commit()
+        print("Test: Select Insert Statement")
+        rows = self.sqlobj.select(self.sqlselect)
+        assert len(rows) > 0, 'Select Statement Errored'
+        print("Test: Delete Insert")
+        
+        assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
+        self.sqlobj.commit()
 #         
 #     def testSqliteUpdate(self):
 #         print("Test: Sqlite3 Insert")
