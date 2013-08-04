@@ -152,6 +152,10 @@ class SqlAdapter(squallsql.Squall):
         self.conn.commit()
         
     def rollback(self):
+        '''
+        :Description:
+            Explicitly invoke a rollback exception for sqlite3
+        '''
         raise self.module.IntegrityError()
     
 class Insert(squallsql.Sql):

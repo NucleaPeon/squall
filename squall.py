@@ -140,17 +140,33 @@ class AdapterException(Exception):
         Exception.__init__(self, message)
         
 class InvalidSqlCommandException(AdapterException):
-    def __init(self, message):
+    def __init__(self, message):
         AdapterException.__init__(self, message)
         
 class InvalidSqlValueException(AdapterException):
-    def __init(self, message):
+    def __init__(self, message):
         AdapterException.__init__(self, message)
         
 class InvalidSqlWhereClauseException(AdapterException):
-    def __init(self, message):
+    def __init__(self, message):
         AdapterException.__init__(self, message)
         
 class InvalidSqlConditionException(AdapterException):
-    def __init(self, message):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
+        
+class EmptyTransactionException(AdapterException):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
+
+class RollbackException(AdapterException):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
+        
+class CommitException(AdapterException):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
+        
+class InvalidSquallObjectException(AdapterException):
+    def __init__(self, message):
         AdapterException.__init__(self, message)

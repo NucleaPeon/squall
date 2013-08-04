@@ -325,10 +325,23 @@ class Transaction(Squall):
         run() will attempt to commit unless an exception is raised.
         See run() method for parameter listings
         
+        It is recommended that one overrides this class in their database
+        driver/adapter class so they can integrate better with their own objects
+        and make use of callbacks.
+        
         
     '''
     def __init__(self, adapter, *args):
-        self.tobjects = list(args)
+        self.tobjects = []
+        for a in args:
+            self.add(a) # Will raise exception if invalid object found
+        self.adapter = adapter
+        
+    def add(self, sqlobject):
+        if not isinstance(sqlobject, Sql):
+            raise squall.InvalidSquallObjectException('Cannot add invalid object {}'.format(
+                str(sqlobject)))
+        self.tobjects.append(sqlobject)
         
     def run(self, rollback_callback=None, success_callback=None,
             raise_exception=False):
@@ -362,10 +375,33 @@ class Transaction(Squall):
               commit is successful.
             - InvalidSquallObjectException - If at any point an AdapterException
               is raised during execution of sql objects.
+              
+        :Returns:
+            - None if rollback occured and transaction failed,
+            - list if successful commit, list contains all transaction objects
         '''
-        
-        pass
-    
+        if len(self.tobjects) == 0:
+            raise squall.EmptyTransactionException('No objects to execute')
+        for tobj in self.tobjects:
+            if not isinstance(tobj, Sql):
+                raise squall.InvalidSquallObjectExecption('{} is invalid'.format(
+                    str(tobj)))
+            
+        try:
+            for squallobj in self.tobjects:
+                self.adapter.sql(str(squallobj))
+            self.adapter.commit()
+        except Exception as E:
+            ### If you want custom database error handling, override this method
+            if raise_exception:
+                raise squall.RollbackException(
+                    'Exception raised: {}'.format(str(E)))
+            else:
+                return None
+        if raise_exception:
+            raise squall.CommitException('Committed Transaction')
+        return self.tobjects
+            
     def pretend(self):
         pass
         
