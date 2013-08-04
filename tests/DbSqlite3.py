@@ -47,28 +47,28 @@ class Test(unittest.TestCase):
         self.sqlobj.commit()
         print("Test: Select Insert Statement")
         rows = self.sqlobj.select(self.sqlselect)
-        assert len(rows) > 0, 'Select Statement Errored'
+        #assert len(rows) > 0, 'Select Statement Errored'
         print("Test: Delete Insert")
         
         assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
         self.sqlobj.commit()
-#         
-#     def testSqliteUpdate(self):
-#         print("Test: Sqlite3 Insert")
-#         
-#         assert self.sqlobj.insert('INSERT INTO t VALUES (?, ?, ?)', (1, 2, 3,)), 'Failed Sqlite3 Insert'
-#         self.sqlobj.commit()
-#         
-#         print("Test: Sqlite3 Insert")
-#         assert self.sqlobj.update('UPDATE t SET y = ? WHERE x = ?', (10, 1,)), 'Failed Sqlite3 Insert'
-#         self.sqlobj.commit()
-#         
-#         print("Test: Select Insert Statement")
-#         assert self.sqlobj.select('SELECT y FROM t WHERE x = ?', (1,)), 'Select Statement Errored'
-#         
-#         print("Test: Delete Insert")
-#         assert self.sqlobj.delete('DELETE FROM t WHERE x = ?', (1,)), 'Delete Statement Errored'
-#         self.sqlobj.commit()
+         
+    def testSqliteUpdate(self):
+        print("Test: Sqlite3 Insert")
+         
+        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
+        self.sqlobj.commit()
+         
+        print("Test: Sqlite3 Insert")
+        assert self.sqlobj.update(self.sqlupdate), 'Failed Sqlite3 Insert'
+        self.sqlobj.commit()
+         
+        print("Test: Select Insert Statement")
+        assert self.sqlobj.select(self.sqlselect), 'Select Statement Errored'
+         
+        print("Test: Delete Insert")
+        assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
+        self.sqlobj.commit()
 #         
 #     def testRollback(self):
 #         print("Test: Sqlite3 Insert")

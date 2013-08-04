@@ -101,30 +101,33 @@ class SqlAdapter(squallsql.Squall):
         if not postcallback is None:
             postcallback(**{'method':self.insert, 'class':self, 
                            'sql':sql})
-        return conn
+        return self.conn
     
-    def update(self, sql, params, precallback=None, postcallback=None):
+    def update(self, sql, precallback=None, postcallback=None):
         '''
         Go directly to sql(), if any update specific code is required,
         put it here.
         '''
         if not precallback is None:
-            precallback()
-        conn = self.sql(sql, params)
+            precallback(**{'method':self.update, 'class':self,
+                           'sql':sql})
+        conn = self.sql(str(sql))
         if not postcallback is None:
-            postcallback()
-        return conn        
+            postcallback(**{'method':self.update, 'class':self,
+                           'sql':sql})
+        return self.conn        
     
-    def select(self, selectobject, precallback=None, postcallback=None):
+    def select(self, sql, precallback=None, postcallback=None):
         '''
         '''
         if not precallback is None:
-            precallback()
-        self.sql(str(selectobject))
-        selectobject.lastqueryresults = self.cursor.fetchall() 
+            precallback(**{'method':self.update, 'class':self,
+                           'sql':sql})
+        self.sql(str(sql)) 
         if not postcallback is None:
-            postcallback()
-        return selectobject.lastqueryresults
+            postcallback(**{'method':self.update, 'class':self,
+                           'sql':sql})
+        return self.conn
         
     def delete(self, sqlobject, precallback=None, postcallback=None):
         '''
