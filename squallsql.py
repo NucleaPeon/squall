@@ -388,17 +388,11 @@ class Transaction(Squall):
                 raise squall.InvalidSquallObjectExecption('{} is invalid'.format(
                     str(tobj)))
             
-        try:
-            for squallobj in self.tobjects:
-                self.adapter.sql(str(squallobj))
-            self.adapter.commit()
-        except Exception as E:
-            ### If you want custom database error handling, override this method
-            if raise_exception:
-                raise squall.RollbackException(
-                    'Exception raised: {}'.format(str(E)))
-            else:
-                return None
+        for squallobj in self.tobjects:
+            self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
+            # via sqlite3, so we don't have to check for this. Other db's will have
+            # to reimplement this.
+        self.adapter.commit()
         if raise_exception:
             raise squall.CommitException('Committed Transaction')
         return self.tobjects

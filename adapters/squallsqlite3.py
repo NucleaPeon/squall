@@ -149,6 +149,12 @@ class SqlAdapter(squallsql.Squall):
         return self.conn
     
     def commit(self):
+        '''
+        :See:
+            Sqlite3 already does some commit and rollback functionality on its own, without
+            our help.
+            - http://docs.python.org/2/library/sqlite3.html#sqlite3-controlling-transactions
+        '''
         self.conn.commit()
         
     def rollback(self):

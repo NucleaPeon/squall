@@ -92,13 +92,18 @@ class Test(unittest.TestCase):
         self.assertEqual(str(sql3tran), str(sqltran), 'Incompatibility between sql3 and base sql transactions')
         sqltran.add(self.sqlselect)
         self.assertRaises(squall.RollbackException, sqltran.pretend)
-        
     
-    def testRollback(self):
-        print("Test: Sqlite3 Insert")
-        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
-        self.assertRaises(self.module.IntegrityError, squall.ADAPTERS.get('sqlite3').rollback)
-
+    def testSqlite3Transaction(self):
+        print("Test: Two Transaction Objects")
+        sql3tran = squallsqlite3.Transaction(self.sqlobj)
+        sql3tran.add(self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
+        sql3tran.run()
+        
+        sql3tran2 = squallsqlite3.Transaction(self.sqlobj)
+        sql3tran2.add(self.sqlselect) # So apparently selects do not cause rollbacks.
+        #self.assertRaises(excClass, callableObj)
+        print(str(sql3tran2.run()))
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
