@@ -86,8 +86,8 @@ class Sql(Squall):
     '''
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
-    def __init__(self, command='', table=None, fields = None, 
-                 values = [], conditions = []):
+    def __init__(self, command='', table=None, field = None, 
+                 values = [], condition = None):
         
         super().__init__()
         self.command = Command(command)
@@ -97,15 +97,17 @@ class Sql(Squall):
                     str(command)))
             
         self.table = table
-        self.fields = fields
+        self.fields = field
         self.values = values
-        self.conditions = conditions
-        for c in conditions:
-            if not isinstance(c, Condition):
-                raise squall.InvalidSqlConditionException(
-                    '{} are not Condition objects'.format(
-                        str(conditions)))
-        
+        if condition is None:
+            self.condition = ''
+        elif not isinstance(condition, Condition):
+            raise squall.InvalidSqlConditionException(
+                '{} are not Condition objects'.format(
+                    str(condition)))
+        else:
+            self.condition = condition
+            
     def __repr__(self):
         '''
         :Description:
@@ -122,8 +124,8 @@ class Sql(Squall):
         #FIXME: Problem with this command is that it doesn't take into account
         # the "FROM" portion of queries and those which don't (UPDATE, INSERT)
         # Need to differentiate from "FROM", "SET", and "VALUES"
-        return "{} {} {} {} {}".format(self.command, str(self.fields), self.table,
-                                       str(self.values), str(self.conditions))
+        return "{} {} {} {} {}".format(self.command, str(self.field), self.table,
+                                       str(self.values), str(self.condition))
 
 class Command(Squall):
     def __init__(self, command):
@@ -299,9 +301,9 @@ class Fields(Squall):
             args = [''] # Empty, such as in INSERT statements without fields
         elif '*' in args:
             args = ['*']
-        elif isinstance(list, args):
+        elif isinstance(args, list):
             args = ', '.join(args) # Cosvert to string
-        elif isintance(tuple, args):
+        elif isinstance(args, tuple):
             args = ', '.join(args)
         else:
             raise InvalidSqlValueException(

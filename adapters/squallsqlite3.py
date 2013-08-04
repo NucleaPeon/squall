@@ -184,7 +184,7 @@ class Select(squallsql.Sql):
         
 class Delete(squallsql.Sql):
     def __init__(self, table, condition=None):
-        super().__init__('DELETE', table, condition)
+        super().__init__('DELETE', table=table, condition=condition)
         self.table = table
         if isinstance(condition, squallsql.Where):
             self.condition = condition
@@ -193,6 +193,10 @@ class Delete(squallsql.Sql):
         
     def __repr__(self):
         return "DELETE FROM {} {}".format(self.table, self.condition)
+        
+class Update(squallsql.Sql):
+    def __init__(self, table, field, values):
+        super().__init__('UPDATE', table=table, field=field, values=values)
         
 class Verbatim(squallsql.Sql):
     '''
