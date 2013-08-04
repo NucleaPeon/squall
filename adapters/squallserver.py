@@ -135,9 +135,6 @@ class SqlAdapter():
         self.cursor.execute(sql, params)
         return self.conn
     
-    def sqldate(self):
-        return self.select('''SELECT GETDATE()''', ()) # Returns connection object
-    
     def commit(self):
         self.conn.commit()
         

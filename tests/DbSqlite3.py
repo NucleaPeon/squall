@@ -70,6 +70,12 @@ class Test(unittest.TestCase):
         assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
         self.sqlobj.commit()
          
+    def testTransaction(self):
+        print("Test: Transactions")
+        sqltran = Transaction(self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
+        assert str(self.sqlinsert) in str(sqltran), 'Could not find sql  insert object in transaction' 
+        
+         
     def testRollback(self):
         print("Test: Sqlite3 Insert")
         assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'

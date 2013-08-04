@@ -141,7 +141,7 @@ class Condition(Squall):
         
 class Where(Condition):
     
-    def __init__(self, field, operator='', value='', conditions=[]):
+    def __init__(self, field, operator, value, conditions=[]):
         '''
         :Description:
             This is the main condition that gets used.
@@ -184,6 +184,8 @@ class Where(Condition):
         '''
         super().__init__()
         self.field = field
+        if not isinstance(operator, str):
+            raise squall.InvalidSqlConditionException('Operator not valid: {}'.format(operator))
         self.operator = operator
         if type(value) == Sql or type(value) == Value:
             if type(value) == Value:
@@ -315,13 +317,57 @@ class Fields(Squall):
 class Transaction(Squall):
     '''
     :Description:
-        Transaction object that takes a list of Squall objects and will
-        commit() or rollback() based on whether one failure is detected,
-        or all objects / strings run without error.
+        Transaction object that takes a list of Squall Command objects and will
+        commit() or rollback() based on whether one failure is detected.
+        
+        This object contains two main methods: run() and pretend()
+        pretend() imitates run() but regardless of options, will not run commit()
+        run() will attempt to commit unless an exception is raised.
+        See run() method for parameter listings
+        
         
     '''
-    def __init__(self, *args):
-        self.tobjects = args
+    def __init__(self, adapter, *args):
+        self.tobjects = list(args)
+        
+    def run(self, rollback_callback=None, success_callback=None,
+            raise_exception=False):
+        '''
+        :Description:
+            Goes through every Squall Command object and runs the sql through
+            the adapter object supplied. (When an adapter class overrides this
+            method, it should supply the adapter automatically, so only args
+            need to be supplied.)
+            Raises an exception and attempts to rollback when an exception
+            is found, meaning an error arose during sql execution.
+            commit() is called if no errors during execution occur.
+            
+        :Parameters:
+            - rollback_callback: If a rollback is called, call this method
+            - success_callback: If Transaction completes as expected, call this
+              method
+            - raise_exception: boolean; raise exceptions on execution completion
+              or error. (great for stricter environments) This does mean that
+              no return statements will be called unless embedded into the error
+              message or object. 
+                        
+        :Exceptions:
+            - EmptyTransactionException: Called when *args is empty and nothing
+              can be run
+            - RollbackException: when raise_exception is True, committing and
+              rolling back will raise an exception. This is raised when a 
+              rollback is encountered.
+            - CommitException: when raise_exception is True, committing and
+              rolling back will raise an exception. This is raised when a 
+              commit is successful.
+            - InvalidSquallObjectException - If at any point an AdapterException
+              is raised during execution of sql objects.
+        '''
+        
+        pass
+    
+    def pretend(self):
+        pass
         
     def __repr__(self):
-        return ', '.join(self.tobjects)
+        return str(self.tobjects)
