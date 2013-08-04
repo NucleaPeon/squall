@@ -83,7 +83,17 @@ class Test(unittest.TestCase):
         self.assertRaises(squall.CommitException, sqltran.run, raise_exception=True)
         print("Test: Transaction Init (with errors)")
         self.assertRaises(squall.InvalidSquallObjectException, Transaction, self.sqlobj, self.sqlinsert, Value(3))
-                
+        print("Test: Sqlite3 Transactions")
+        # --- Sqlite3 transaction specific class ---
+        sql3tran = squallsqlite3.Transaction(self.sqlobj)
+        self.assertNotEqual(sql3tran, None, 'Sqlite3 Transaction is None')
+        self.assertFalse(str(sql3tran), 'Sqlite3 transaction expected to be empty, is not')
+        sqltran = Transaction(self.sqlobj)
+        self.assertEqual(str(sql3tran), str(sqltran), 'Incompatibility between sql3 and base sql transactions')
+        sqltran.add(self.sqlselect)
+        self.assertRaises(squall.RollbackException, sqltran.pretend)
+        
+    
     def testRollback(self):
         print("Test: Sqlite3 Insert")
         assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'

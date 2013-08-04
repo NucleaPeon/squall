@@ -237,6 +237,12 @@ class Update(squallsql.Sql):
         
         return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
         
+class Transaction(squallsql.Transaction):
+    def __init__(self, adapter, *args):
+        super().__init__(adapter, *args)
+        
+    
+        
 class Verbatim(squallsql.Sql):
     '''
     :Description:
