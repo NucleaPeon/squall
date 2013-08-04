@@ -27,7 +27,6 @@ class Test(unittest.TestCase):
         self.sqldelete = squallsqlite3.Delete(Table('t'), Where('x', '=', Value(1)))
         self.sqlupdate = squallsqlite3.Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), Where('x', '=', Value(1)))
-        print(str(self.sqlupdate))
 
     def tearDown(self):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;')
@@ -47,7 +46,8 @@ class Test(unittest.TestCase):
         self.sqlobj.commit()
         print("Test: Select Insert Statement")
         rows = self.sqlobj.select(self.sqlselect)
-        #assert len(rows) > 0, 'Select Statement Errored'
+        assert len(rows) > 0, 'Select Statement Errored'
+        print(str(rows))
         print("Test: Delete Insert")
         
         assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
@@ -69,11 +69,11 @@ class Test(unittest.TestCase):
         print("Test: Delete Insert")
         assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
         self.sqlobj.commit()
-#         
-#     def testRollback(self):
-#         print("Test: Sqlite3 Insert")
-#         assert self.sqlobj.insert('INSERT INTO t VALUES (?, ?, ?)', (1, 2, 3,)), 'Failed Sqlite3 Insert'
-#         self.assertRaises(self.module.IntegrityError, squall.ADAPTERS.get('sqlite3').rollback)
+         
+    def testRollback(self):
+        print("Test: Sqlite3 Insert")
+        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
+        self.assertRaises(self.module.IntegrityError, squall.ADAPTERS.get('sqlite3').rollback)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

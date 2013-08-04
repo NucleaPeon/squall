@@ -119,6 +119,9 @@ class SqlAdapter(squallsql.Squall):
     
     def select(self, sql, precallback=None, postcallback=None):
         '''
+        :Returns:
+            - list: sql results of query in a tuple [(row1 data), (rowN data)]
+                - rowN data represents the fields selected
         '''
         if not precallback is None:
             precallback(**{'method':self.update, 'class':self,
@@ -127,7 +130,7 @@ class SqlAdapter(squallsql.Squall):
         if not postcallback is None:
             postcallback(**{'method':self.update, 'class':self,
                            'sql':sql})
-        return self.conn
+        return self.cursor.fetchall()
         
     def delete(self, sqlobject, precallback=None, postcallback=None):
         '''
