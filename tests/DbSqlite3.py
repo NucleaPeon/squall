@@ -26,7 +26,8 @@ class Test(unittest.TestCase):
         self.sqlinsert = squallsqlite3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
         self.sqldelete = squallsqlite3.Delete(Table('t'), Where('x', '=', Value(1)))
         self.sqlupdate = squallsqlite3.Update(Table('t'), Fields('y', 'z'), 
-                                              (Value(5), Value(9)))
+                                              (Value(5), Value(9)), Where('x', '=', Value(1)))
+        print(str(self.sqlupdate))
 
     def tearDown(self):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;')

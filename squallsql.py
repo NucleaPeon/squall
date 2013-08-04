@@ -298,18 +298,15 @@ class Fields(Squall):
     def __init__(self, *args):
         # A Wildcard eliminates the need for any additional fields
         if len(args) == 0:
-            args = [''] # Empty, such as in INSERT statements without fields
+            args = [''] # Empty, so INSERT statements don't fail, need empty string
         elif '*' in args:
             args = ['*']
-        elif isinstance(args, list):
-            args = ', '.join(args) # Cosvert to string
-        elif isinstance(args, tuple):
-            args = ', '.join(args)
         else:
-            raise InvalidSqlValueException(
-                    'Value is neither a wildcard char nor a list or tuple')
+            if not type(args) in [list, tuple]:
+                raise InvalidSqlValueException(
+                        'Value is neither a wildcard char nor a list or tuple')
         self.fields = args
-        
+                
     def __repr__(self):
         if type(self.fields) == str:
             return self.fields

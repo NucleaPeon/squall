@@ -30,6 +30,7 @@ import sys, os
 sys.path.append(os.path.join('..'))
 
 import squallsql
+import squall # for exceptions
 
 class SqlAdapter(squallsql.Squall):
     '''
@@ -195,8 +196,36 @@ class Delete(squallsql.Sql):
         return "DELETE FROM {} {}".format(self.table, self.condition)
         
 class Update(squallsql.Sql):
-    def __init__(self, table, field, values):
-        super().__init__('UPDATE', table=table, field=field, values=values)
+    def __init__(self, table, field, values, condition=None):
+        super().__init__('UPDATE', table=table, field=field, values=values,
+                         condition=condition)
+        self.table = table
+        self.field = field
+        self.values = values
+        if condition is None:
+            self.condition = ''
+        else:
+            self.condition = condition
+        
+    def __parse_values(self, field, value):
+        return "{} = {}".format(field, value)
+        
+    def __repr__(self):
+        cond = ''
+        if not self.condition is None:
+            cond = ' {}'.format(str(self.condition))
+        params = []
+        if len(self.field.fields) == 1:
+            # Not an array, but one field
+            if not isinstance(self.values, str):
+                raise squall.InvalidSqlValueException(
+                    'Non-Equal fields [1] to values [{}] ratio'.format(
+                        len(self.values)))
+            return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
+        for i in range(0, len(self.values)):
+            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
+        
+        return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
         
 class Verbatim(squallsql.Sql):
     '''
