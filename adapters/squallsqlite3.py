@@ -42,7 +42,7 @@ class SqlAdapter():
         self.conn.close()
         self.module = None
     
-    def insert(self, sql, params, precallback=None, postcallback=None):
+    def insert(self, sqlobject, precallback=None, postcallback=None):
         '''
         Go directly to sql(), if any insert specific code is required,
         put it callback.
@@ -64,7 +64,6 @@ class SqlAdapter():
               main non-query is submitted
             - sql: this is the sql structure object or string that contains
               the fields, tables and conditions for the statement
-            - params: tuple of parameters based on '?' in sql statement
             
         :Returns:
             - connection object
@@ -72,11 +71,11 @@ class SqlAdapter():
         if not precallback is None:
             # Submit parameters as a non-required dictionary
             precallback(**{'method':self.insert, 'class':self, 
-                           'sql':sql, 'params':params})
+                           'sql':sql})
         conn = self.sql(sql, params)
         if not postcallback is None:
             postcallback(**{'method':self.insert, 'class':self, 
-                           'sql':sql, 'params':params})
+                           'sql':sql})
         return conn
     
     def update(self, sql, params, precallback=None, postcallback=None):

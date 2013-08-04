@@ -30,26 +30,73 @@ in your database adapter class:
 
 import squall
 
-class Sql():
+class Squall():
     '''
-    Sql Meta Object
+    :Description:
+        Squall is a class object that all other squall-based objects inherit
+        so applications can differentiate between classes of the same name
+        (if applicable) as many of these classes have generic simple names.
+        
+        There is no functionality difference in this class as of its
+        first version. Future versions may expand on this class's
+        functionality.
+    '''
+    def __init__(self):
+        pass
+
+class Sql(Squall):
+    '''
+    :Description:
+        Sql is a GENERIC class for handling sql; this means that its
+        parameters are meant to cover all possible sql commands and
+        then each specific command, such as SELECT, will inherit this
+        class and then only use what it needs.
+        
+        An Sqlite3 Select object would inherit squallsql.Sql and
+        the __init__ function would take table, fields and conditions
+        parameters. It would fill in command to SELECT by itself and
+        ignore values since that is an INSERT specific parameter.
+        
+        Truly, this class's purpose is more for managing acceptable
+        values that all other objects will build off of, a sanity
+        check more than an actually used class object.
     
-    Transaction functionality such as rolling back and committing
-    is handled by the driver adapters.
-    (Queue list of sql objects or strings)
+    :Parameters:
+        - command: string; All uppercase, currently defined commands are:
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - DROP
+            
+          Any more commands that sql uses can be added to the Sql.COMMANDS
+          list, otherwise an InvalidSqlConditionException is raised.
+          
+        - table: string; name of the table to act on. 
     '''
     
+    '''
+    :Class Variables:
+        - COMMANDS: list; values of acceptable commands. See Class :Parameters:
+          section or print(str(Sql(...).COMMANDS)) 
+    '''
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
-    def __init__(self, command, table, fields = ['*'], 
+    def __init__(self, command='', table='', fields = ['*'], 
                  values = [], conditions = []):
-        '''
-        :Conditions:
-        '''
         
+        super().__init__(self)
         self.command = Command(command.upper())
+        if not self.command in Sql.COMMANDS:
+            raise squall.InvalidSqlCommandException(
+                'Command {} is not a valid command to issue'.format(
+                    str(command)))
         self.table = table
-        self.fields = fields
+        if len(fields) == 0:
+            self.fields = ['*']
+        else:
+            self.fields = fields
         self.values = values
         self.conditions = conditions
         for c in conditions:
@@ -59,39 +106,60 @@ class Sql():
                         str(conditions)))
         
     def __repr__(self):
+        '''
+        :Description:
+            Represents the Sql() object by returning all class parameters
+            as a string -- which will inevitably fail if actually used to
+            call sql. It only represents the base object for the purpose
+            of introspection.
+            
+        :Returns:
+            - string: all parameters in one string separated by spaces.
+              Do not try to split by spaces, as it will not work since some
+              parameters are str(list) conversions or object->string conversions.
+        '''
         #FIXME: Problem with this command is that it doesn't take into account
         # the "FROM" portion of queries and those which don't (UPDATE, INSERT)
         # Need to differentiate from "FROM", "SET", and "VALUES"
-        return "{} {} {} {} {}".format(self.command, self.fields, self.table,
-                                       self.values, self.conditions)
-class Command():
-    
-    def __init__(self, command):
-        self.command = command
-        if not self.command in Sql.COMMANDS:
-            raise squall.InvalidSqlCommandException(
-                'Command {} is not a valid command to issue'.format(
-                    str(command)))
+        return "{} {} {} {} {}".format(self.command, str(self.fields), self.table,
+                                       str(self.values), str(self.conditions))
         
-    def __repr__(self):
-        return self.command
-        
-class Condition():
-    def __init__(self):
-        pass
-    
-    def __repr__(self):
-        return ''
+class Condition(Squall):
+    def __init__(self, conditions = []):
+        super().__init__()
         
 class Where(Condition):
     
-    def __init__(self, field, operator, value, conditions=[]):
+    def __init__(self, field, operator='', value='', conditions=[]):
         '''
-        TODO
+        :Description:
+            This is the main condition that gets used.
+            It follows the struture (usually) of:
+                - WHERE field [operator] value [optional conditions]
+                    - operator: string/character; =, >=, <=, IN, etc. etc.
+                    - optional conditions: list of Condition objects
+                        - Where(), Exists(), Where(..., Select())
+                      Conditions can specify more conditions to give sql output like this:
+                      
+                      SELECT * FROM table WHERE pk = 'value' AND fk = 'secondary'
+                      
+                      You write it like this: 
+                      Select('table', ['*'], Where('pk', '=', 'value', Where(
+                          'fk', '=', 'secondary'))
+                          
+                      Subqueries require that a Select object be added to the conditions
+                      list:
+                      
+                      Where('pk', '=', 'value', Where('value', 'IN', 
+                          Select('tbl', ['values'], Where('COUNT(values)', '>=', 5))))
+                          
+                      It gets complicated, but allows for easier and dynamic code generation 
+                      of sql over time and multiple databases.
+            
         :Parameters:
             - value: string; can be an Sql object IF AND ONLY IF
               command == 'SELECT', otherwise expects a string
-              representation
+              representation. 
             - conditions: tuple; Either: 
                 - A list of strings, which are joined to create one string
                 - A list of Where or Select objects, where the representation of each
@@ -103,9 +171,10 @@ class Where(Condition):
                 >> WHERE x = 5 AND (SELECT y FROM t WHERE y = 7)
                 
         '''
+        super().__init__()
         self.field = field
         self.operator = operator
-        if type(value) == Command:
+        if type(value) == Sql:
             if not value.command == "SELECT":
                 raise squall.InvalidSqlWhereClauseException(
                     'Non-Queries not allowed in WHERE Clause') 
@@ -134,8 +203,14 @@ class Where(Condition):
                                           self.value, self.conditions)
         
 class Exists(Condition):
+    '''
+    :Description:
+        Appends the IF EXISTS or IF NOT EXISTS sql condition when handling 
+        tables or columns.
+    '''
     
     def __init__(self, exists=True):
+        super().__init__()
         self.exists = exists
         
     def __repr__(self):
@@ -144,8 +219,10 @@ class Exists(Condition):
         else:
             return "IF NOT EXISTS"
     
-class Values():
-    def __init__(self, values):
+class Value(Squall):
+    '''
+    '''
+    def __init__(self, value, type):
         if not type(values) in [list, tuple]:
             raise squall.InvalidSqlValueException(
                 'Values must be in tuple or list format') 
@@ -174,3 +251,7 @@ class Fields():
         
     def __repr__(self):
         return ', '.join(self.fields)
+    
+class Transaction():
+    def __init__(self):
+        pass
