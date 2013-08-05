@@ -20,7 +20,7 @@ There are actually two or three SQL Server drivers written and distrubuted by Mi
 <-- 
 '''
 
-import squall
+import squall, squallsql
 
 class SqlAdapter():
     '''
@@ -140,3 +140,25 @@ class SqlAdapter():
         
     def rollback(self):
         self.conn.rollback()
+        
+class Verbatim(squallsql.Sql):
+    '''
+    :Description:
+        Verbatim is a class whose purpose is to pipe direct
+        string sql commands into the database driver. This is to
+        allow customization by preference of the developer.
+        
+        If params are a tuple that has a lenth > 0, this class checks
+        the sql for ? characters and replaces each ? with the parameter
+        based on order: first ? == first parameter (params[0])
+        
+        If more or fewer ?'s exist than params has in length, 
+        an error is raised. 
+    '''
+    # TODO
+    def __init__(self, sql):
+        self.sql = sql
+        
+    def __repr__(self):
+        return "{}".format(self.sql)
+    

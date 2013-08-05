@@ -10,7 +10,7 @@ apply to all databases due to those differences.
 The database adapter should inherit this class and override the methods
 that have functionality that differ.
 
-This base class will return verbatim what is submitted, except lists
+This base class will return ` what is submitted, except lists
 will be parsed with commas
 
 If you want to use this class to produce sql strings, do it like this
@@ -300,7 +300,7 @@ class Fields(Squall):
     def __init__(self, *args):
         # A Wildcard eliminates the need for any additional fields
         if len(args) == 0:
-            args = [''] # Empty, so INSERT statements don't fail, need empty string
+            args = '' # Empty, so INSERT statements don't fail, need empty string
         elif '*' in args:
             args = ['*']
         else:
@@ -310,8 +310,6 @@ class Fields(Squall):
         self.fields = args
                 
     def __repr__(self):
-        if type(self.fields) == str:
-            return self.fields
         return ', '.join(self.fields)
     
 class Transaction(Squall):
@@ -343,6 +341,16 @@ class Transaction(Squall):
                 raise squall.InvalidSquallObjectException('Cannot add invalid object {}'.format(
                     str(a)))
             self.tobjects.append(a)
+            
+    def clear(self):
+        '''
+        :Returns:
+            All the transaction's current sql objects in a list before it clears
+            to an empty list.
+        '''
+        retval = self.tobjects
+        self.tobjects = []
+        return retval
         
     def run(self, rollback_callback=None, success_callback=None,
             raise_exception=False):
@@ -395,7 +403,7 @@ class Transaction(Squall):
         self.adapter.commit()
         if raise_exception:
             raise squall.CommitException('Committed Transaction')
-        return self.tobjects
+        return self.clear()
             
     def pretend(self):
         if len(self.tobjects) == 0:
@@ -416,3 +424,24 @@ class Transaction(Squall):
     
     def __repr__(self):
         return ', '.join(str(x) for x in self.tobjects)
+    
+class Verbatim(Sql):
+    '''
+    :Description:
+        Verbatim is a class whose purpose is to pipe direct
+        string sql commands into the database driver. This is to
+        allow customization by preference of the developer.
+        
+        If params are a tuple that has a lenth > 0, this class checks
+        the sql for ? characters and replaces each ? with the parameter
+        based on order: first ? == first parameter (params[0])
+        
+        If more or fewer ?'s exist than params has in length, 
+        an error is raised. 
+    '''
+    # TODO
+    def __init__(self, sql):
+        self.sql = sql
+        
+    def __repr__(self):
+        return "{}".format(self.sql)

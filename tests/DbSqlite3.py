@@ -60,6 +60,7 @@ class Test(unittest.TestCase):
         self.sqlobj.commit()
          
         print("Test: Sqlite3 Insert")
+        print(str(self.sqlupdate))
         assert self.sqlobj.update(self.sqlupdate), 'Failed Sqlite3 Insert'
         self.sqlobj.commit()
          
@@ -96,6 +97,7 @@ class Test(unittest.TestCase):
     def testSqlite3Transaction(self):
         print("Test: Two Transaction Objects")
         sql3tran = squallsqlite3.Transaction(self.sqlobj)
+        print(str(sql3tran))
         sql3tran.add(self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
         sql3tran.run()
         

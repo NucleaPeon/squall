@@ -172,8 +172,11 @@ class Insert(squallsql.Sql):
         self.values = values
         
     def __repr__(self):
+        mf = self.field
+        if self.field.fields != '':
+            mf = '{}{}{}'.format(' (', mf, ')')
         return "INSERT INTO {}{} VALUES ({})".format(self.table, 
-                                self.fields,
+                                mf,
                                 ', '.join(str(x) for x in self.values))
         
 class Select(squallsql.Sql):
@@ -231,6 +234,7 @@ class Update(squallsql.Sql):
         if not self.condition is None:
             cond = ' {}'.format(str(self.condition))
         params = []
+        
         if len(self.field.fields) == 1:
             # Not an array, but one field
             if not isinstance(self.values, str):
@@ -249,22 +253,5 @@ class Transaction(squallsql.Transaction):
         
     
         
-class Verbatim(squallsql.Sql):
-    '''
-    :Description:
-        Verbatim is a class whose purpose is to pipe direct
-        string sql commands into the database driver. This is to
-        allow customization by preference of the developer.
-        
-        If params are a tuple that has a lenth > 0, this class checks
-        the sql for ? characters and replaces each ? with the parameter
-        based on order: first ? == first parameter (params[0])
-        
-        If more or fewer ?'s exist than params has in length, 
-        an error is raised. 
-    '''
-    # TODO
-    def __init__(self, sql, params=()):
-        self.sql = sql
-        self.params = params
+
         
