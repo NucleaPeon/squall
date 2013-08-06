@@ -87,10 +87,13 @@ class Sql(Squall):
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
     def __init__(self, command='', table=None, field = None, 
-                 values = [], condition = None):
+                 values = [], condition = None, precallback=None,
+                 postcallback=None):
         
         super().__init__()
         self.command = Command(command)
+        self.precallback = precallback
+        self.postcallback = postcallback
         if not str(self.command) in Sql.COMMANDS:
             raise squall.InvalidSqlCommandException(
                 'Command {} is not a valid command to issue'.format(

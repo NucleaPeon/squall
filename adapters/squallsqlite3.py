@@ -93,6 +93,7 @@ class SqlAdapter(squallsql.Squall):
             - sql: this is the sql structure object or string that contains
               the fields, tables and conditions for the statement
             
+            
         :Returns:
             - connection object
         '''
@@ -122,6 +123,11 @@ class SqlAdapter(squallsql.Squall):
     
     def select(self, sql, precallback=None, postcallback=None):
         '''
+        :Description:
+            In order to get the sql results in the postcallback, look for the
+            'result' **kwargs in the postcallback method. You will need to set
+            the method parameter with **kwargs in order to do so. 
+            
         :Returns:
             - list: sql results of query in a tuple [(row1 data), (rowN data)]
                 - rowN data represents the fields selected
@@ -130,10 +136,11 @@ class SqlAdapter(squallsql.Squall):
             precallback(**{'method':self.update, 'class':self,
                            'sql':sql})
         self.sql(str(sql)) 
+        results = self.cursor.fetchall()
         if not postcallback is None:
             postcallback(**{'method':self.update, 'class':self,
-                           'sql':sql})
-        return self.cursor.fetchall()
+                           'sql':sql, 'result':results})
+        return results
         
     def delete(self, sqlobject, precallback=None, postcallback=None):
         '''
@@ -148,7 +155,7 @@ class SqlAdapter(squallsql.Squall):
         return self.conn
     
     def sql(self, sql, param=()):
-        self.cursor.execute(sql, param)
+        self.cursor.execute(str(sql), param)
         return self.conn
     
     def commit(self):
@@ -188,8 +195,20 @@ class Insert(squallsql.Sql):
                                 ', '.join(str(x) for x in self.values))
         
 class Select(squallsql.Sql):
-    def __init__(self, table, fields, condition=None):
-        super().__init__('SELECT', table, fields, condition)
+    def __init__(self, table, fields, condition=None, precallback=None,
+                 postcallback=None):
+        '''
+        :Description:
+        :Parameters:
+            - precallback: method; passed to the Transaction object which passes
+              it to the sqlobj (adapter) .select() statement
+            - postcallback: method; passed to the Transaction object which passes
+              it to the sqlobj (adapter) .select() statement. Adding a method 
+              here which garners the kwargs.get('result') call will fetch 
+              results of the statement.  
+        '''
+        super().__init__('SELECT', table, fields, condition, precallback,
+                         postcallback=None)
         self.table = table
         self.fields = fields
         self.existsflag = False

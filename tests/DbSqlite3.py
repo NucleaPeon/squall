@@ -16,13 +16,12 @@ import squallsqlite3 as sql3
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
         # Sqlite3 database
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
         self.module = squall.db('sqlite3')
-        sql3.Verbatim('DROP TABLE IF EXISTS t;')
-        sql3.Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
+        trns = sql3.Transaction(self.sqlobj, sql3.Verbatim('DROP TABLE IF EXISTS t;'),
+                                sql3.Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')).run()
         
         self.sqlselect = sql3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
         self.sqlinsert = sql3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
@@ -107,6 +106,13 @@ class Test(unittest.TestCase):
         sql3tran2.add(self.sqlselect) # So apparently selects do not cause rollbacks.
         #self.assertRaises(excClass, callableObj)
         print(str(sql3tran2.run()))
+        
+    def testSelectReturn(self):
+        print("Testing return value of Select")
+        output = sql3.Transaction(self.sqlobj, self.sqlselect).run()
+        print(str(output))
+        assert isinstance(output, list), 'Expected a list, got {}'.format(str(output))
+        assert isinstance(output[0], tuple), 'Expected tuple as a result, got {}'.format(type(output[0]))
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
