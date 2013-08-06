@@ -29,8 +29,7 @@ Basic Overview:
 import sys, os
 sys.path.append(os.path.join('..'))
 
-import squallsql
-import squall # for exceptions
+import squallsql, squall # for exceptions
 
 class SqlAdapter(squallsql.Squall):
     '''
@@ -40,6 +39,7 @@ class SqlAdapter(squallsql.Squall):
     '''
     
     def __init__(self, module):
+        super().__init__()
         self.module = module
     
     def connect(self, db_name, **kwargs):
@@ -59,26 +59,28 @@ class SqlAdapter(squallsql.Squall):
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
     
-    def disconnect(self, rollback=False):
-        if rollback:
-            self.rollback()
-        else:
-            self.commit()
+    def disconnect(self):
+        '''
+        :Description:
+            Disconnect the driver from the database.
+        '''
         self.conn.close()
-        self.module = None
     
     def insert(self, sqlobject, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any insert specific code is required,
-        put it callback.
-        
         :Description:
-            Since insert/update/delete require commit to perform, 
-            multiple methods can be placed into a transaction and
-            can all be commited at once.
-            
-            In order to utilize this functionality, callbacks are 
-            required. Use the postcallback() to return the sql string.
+            Database Adapter insert->sql method with callbacks for
+            added functionality. This allows users to support logging
+            and additional commits.
+        
+        :See:
+            Transaction:
+                Since insert/update/delete require commit to perform, 
+                multiple methods can be placed into a transaction and
+                can all be commited at once.
+                
+                In order to utilize this functionality, callbacks are 
+                required. Use the postcallback() to return the sql string.
             
         :Parameters:
             Parameters that are submitted to both callback methods are
@@ -96,11 +98,11 @@ class SqlAdapter(squallsql.Squall):
         if not precallback is None:
             # Submit parameters as a non-required dictionary
             precallback(**{'method':self.insert, 'class':self, 
-                           'sql':sql})
+                           'sql':sqlobject})
         conn = self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback(**{'method':self.insert, 'class':self, 
-                           'sql':sql})
+                           'sql':sqlobject})
         return self.conn
     
     def update(self, sql, precallback=None, postcallback=None):
@@ -111,7 +113,7 @@ class SqlAdapter(squallsql.Squall):
         if not precallback is None:
             precallback(**{'method':self.update, 'class':self,
                            'sql':sql})
-        conn = self.sql(str(sql))
+        self.sql(str(sql))
         if not postcallback is None:
             postcallback(**{'method':self.update, 'class':self,
                            'sql':sql})
@@ -150,6 +152,11 @@ class SqlAdapter(squallsql.Squall):
     
     def commit(self):
         '''
+        Deprecated in favour of Transaction objects
+        :Description:
+            Calls the commit() function of the database connection
+            driver.
+            
         :See:
             Sqlite3 already does some commit and rollback functionality on its own, without
             our help.
@@ -251,7 +258,20 @@ class Transaction(squallsql.Transaction):
     def __init__(self, adapter, *args):
         super().__init__(adapter, *args)
         
-    
+        
+class Verbatim(squallsql.Sql):
+    '''
+    :Description:
+        Verbatim is a class whose purpose is to pipe direct
+        string sql commands into the database driver. This is to
+        allow customization by preference of the developer.
+    '''
+    # TODO
+    def __init__(self, sql):
+        self.sql = sql
+        
+    def __repr__(self):
+        return "{}".format(self.sql)
         
 
         

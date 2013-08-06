@@ -19,10 +19,12 @@ There are actually two or three SQL Server drivers written and distrubuted by Mi
     DRIVER={SQL Server Native Client 10.0};SERVER=dagger;DATABASE=test;UID=user;PWD=password
 <-- 
 '''
+import sys, os
+sys.path.append(os.path.join('..'))
 
 import squall, squallsql
 
-class SqlAdapter():
+class SqlAdapter(squallsql.Squall):
     '''
     API for calling odbc (sql server)
     
@@ -30,9 +32,8 @@ class SqlAdapter():
     '''
     
     def __init__(self, module):
+        super().__init__()
         self.module = module
-        self.conn = None
-        self.cursor = None
         
     def connect(self, db_name, **kwargs):
         '''
@@ -78,24 +79,78 @@ class SqlAdapter():
         return self.conn
     
     def disconnect(self):
+        '''
+        :Description:
+            Disconnect the driver from the database.
+        '''
         self.conn.close()
     
     def insert(self, sql, params, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any insert specific code is required,
-        put it callback.
+        :Description:
+            Database Adapter insert->sql method with callbacks for
+            added functionality. This allows users to support logging
+            and additional commits.
+        
+        :See:
+            Transaction:
+                Since insert/update/delete require commit to perform, 
+                multiple methods can be placed into a transaction and
+                can all be commited at once.
+                
+                In order to utilize this functionality, callbacks are 
+                required. Use the postcallback() to return the sql string.
+            
+        :Parameters:
+            Parameters that are submitted to both callback methods are
+            as follows:
+            - method: this insert method is supplied
+            - module: this class so that multiple methods can be strung 
+              together
+              main non-query is submitted
+            - sql: this is the sql structure object or string that contains
+              the fields, tables and conditions for the statement
+            
+        :Returns:
+            - connection object
         '''
         if not precallback is None:
-            precallback()
-        self.sql(sql, params)
+            precallback(**{'method':self.insert, 'class':self, 
+                           'sql':sqlobject})
+        self.sql(str(sqlobject))
         if not postcallback is None:
-            postcallback()
+            postcallback(**{'method':self.insert, 'class':self, 
+                           'sql':sqlobject})
         return self.conn
     
     def update(self, sql, params, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any update specific code is required,
-        put it here.
+        :Description:
+            Database Adapter update->sql method with callbacks for
+            added functionality. This allows users to support logging
+            and additional commits.
+        
+        :See:
+            Transaction:
+                Since insert/update/delete require commit to perform, 
+                multiple methods can be placed into a transaction and
+                can all be commited at once.
+                
+                In order to utilize this functionality, callbacks are 
+                required. Use the postcallback() to return the sql string.
+            
+        :Parameters:
+            Parameters that are submitted to both callback methods are
+            as follows:
+            - method: this insert method is supplied
+            - module: this class so that multiple methods can be strung 
+              together
+              main non-query is submitted
+            - sql: this is the sql structure object or string that contains
+              the fields, tables and conditions for the statement
+            
+        :Returns:
+            - connection object
         '''
         if not precallback is None:
             precallback()
@@ -106,8 +161,36 @@ class SqlAdapter():
         
     def select(self, sql, params, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any select specific code is required,
-        put it here.
+        :Description:
+            Database Adapter insert->sql method with callbacks for
+            added functionality. This allows users to support logging
+            and additional commits.
+        
+        :See:
+            Transaction:
+                Since insert/update/delete require commit to perform, 
+                multiple methods can be placed into a transaction and
+                can all be commited at once.
+                
+                Selects don't normally require a transaction and nothing
+                is committed, but it is still recommended to use selects
+                in transaction objects.
+                
+                In order to utilize this functionality, callbacks are 
+                required. Use the postcallback() to return the sql string.
+            
+        :Parameters:
+            Parameters that are submitted to both callback methods are
+            as follows:
+            - method: this insert method is supplied
+            - module: this class so that multiple methods can be strung 
+              together
+              main non-query is submitted
+            - sql: this is the sql structure object or string that contains
+              the fields, tables and conditions for the statement
+            
+        :Returns:
+            - connection object
         '''
         if not precallback is None:
             precallback()
@@ -118,8 +201,32 @@ class SqlAdapter():
         
     def delete(self, sql, params, precallback=None, postcallback=None):
         '''
-        Go directly to sql(), if any delete specific code is required,
-        put it here.
+        :Description:
+            Database Adapter delete->sql method with callbacks for
+            added functionality. This allows users to support logging
+            and additional commits.
+        
+        :See:
+            Transaction:
+                Since insert/update/delete require commit to perform, 
+                multiple methods can be placed into a transaction and
+                can all be commited at once.
+                
+                In order to utilize this functionality, callbacks are 
+                required. Use the postcallback() to return the sql string.
+            
+        :Parameters:
+            Parameters that are submitted to both callback methods are
+            as follows:
+            - method: this insert method is supplied
+            - module: this class so that multiple methods can be strung 
+              together
+              main non-query is submitted
+            - sql: this is the sql structure object or string that contains
+              the fields, tables and conditions for the statement
+            
+        :Returns:
+            - connection object
         '''
         if not precallback is None:
             precallback()
@@ -128,17 +235,33 @@ class SqlAdapter():
             postcallback()
         return self.conn
     
-    def sql(self, sql, params):
-        if "IF EXISTS" in sql:
-            print("Warning: SQL Server does not allow IF EXISTS clauses")
-            print("-- correct if wrong")
-        self.cursor.execute(sql, params)
+    def sql(self, sql):
+        '''
+        :Description:
+            Executes the sql string
+            
+        :Parameters:
+            - sql: string; sql statement
+        '''
+        self.cursor.execute(sql)
         return self.conn
     
     def commit(self):
+        '''
+        Deprecated in favour of Transaction objects
+        :Description:
+            Calls the commit() function of the database connection
+            driver.
+        '''
         self.conn.commit()
         
     def rollback(self):
+        '''
+        Deprecated in favour of Transaction objects
+        :Description:
+            Causes a rollback call to be emitted, causing all
+            statements up to the current point to be rolled back
+        '''
         self.conn.rollback()
         
 class Verbatim(squallsql.Sql):
@@ -147,13 +270,6 @@ class Verbatim(squallsql.Sql):
         Verbatim is a class whose purpose is to pipe direct
         string sql commands into the database driver. This is to
         allow customization by preference of the developer.
-        
-        If params are a tuple that has a lenth > 0, this class checks
-        the sql for ? characters and replaces each ? with the parameter
-        based on order: first ? == first parameter (params[0])
-        
-        If more or fewer ?'s exist than params has in length, 
-        an error is raised. 
     '''
     # TODO
     def __init__(self, sql):

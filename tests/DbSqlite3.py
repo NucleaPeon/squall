@@ -1,8 +1,10 @@
-'''
-Created on Jul 30, 2013
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Author: Daniel Kettle
+# Date:   July 29 2013
+#
 
-@author: dkettle
-'''
 import sys, os
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
