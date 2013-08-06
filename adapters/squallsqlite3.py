@@ -255,6 +255,17 @@ class Update(squallsql.Sql):
         return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
         
 class Transaction(squallsql.Transaction):
+    '''
+    Sqlite3 Transaction object
+    
+    :Description:
+        Manages transactions from an sqlite3-specific perspective.
+        Because sqlite3 already includes transaction functionality,
+        we can utilize the base object in squallsql.
+        
+        Rollbacks raise an exception.
+    '''
+    
     def __init__(self, adapter, *args):
         super().__init__(adapter, *args)
         

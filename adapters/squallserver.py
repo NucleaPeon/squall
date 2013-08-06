@@ -264,6 +264,36 @@ class SqlAdapter(squallsql.Squall):
         '''
         self.conn.rollback()
         
+class Insert(squallsql.Sql):
+    '''
+    Insert object that inherits Base Insert object in
+    squallsql. 
+    
+    Note: Same as sqlite3 driver, which this is based off of.
+    
+    :Description:
+        Sql Server Insert object that properly formats insert statements
+        in sql server format.
+        
+    :Parameters:
+        - table: Table() object; 
+        - field: Fields() object;
+        - values: [Value()] object;
+    '''
+    def __init__(self, table, field, values):
+        super().__init__('INSERT', table, field, values)
+        self.table = table
+        self.field = field
+        self.values = values
+        
+    def __repr__(self):
+        mf = self.field
+        if self.field.fields != '':
+            mf = '{}{}{}'.format(' (', mf, ')')
+        return "INSERT INTO {}{} VALUES ({})".format(self.table, 
+                                mf,
+                                ', '.join(str(x) for x in self.values))
+        
 class Verbatim(squallsql.Sql):
     '''
     :Description:
