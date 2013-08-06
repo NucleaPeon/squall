@@ -338,7 +338,7 @@ class Transaction(Squall):
     def add(self, *args):
         for a in args:
             if not isinstance(a, Sql):
-                raise squall.InvalidSquallObjectException('Cannot add invalid object {}'.format(
+                raise squall.InvalidSquallObjectException('Cannot add non-sql object {}'.format(
                     str(a)))
             self.tobjects.append(a)
             

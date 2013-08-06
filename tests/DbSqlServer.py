@@ -1,26 +1,31 @@
-'''
-Created on Jul 30, 2013
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Author: Daniel Kettle
+# Date:   July 29 2013
+#
 
-@author: dkettle
-'''
 import sys, os
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
 import squall
+from squallsql import Table, Fields, Value, Transaction, Where
+import squallserver as tsql
 
 class Test(unittest.TestCase):
 
 
     def setUp(self):
-        print("Connecting to SQL Server on local machine")
         self.sqlobj = squall.Session().connect('rfid', adapter='sqlserver', trusted=True, driver='SQL Server')
         self.module = squall.db('sqlserver')
-        print("Checking driver and connection")
+        
+        self.sqlselect = tsql.Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
+        
+    
         assert not self.module is None, 'Python Driver not imported successfully'
         assert not self.sqlobj is None, 'Squallserver not imported correctly or invalid'
-        print("Creating Table t")
         self.sqlobj.sql('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))', ())
         self.sqlobj.commit()
     

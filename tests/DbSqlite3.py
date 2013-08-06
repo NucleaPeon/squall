@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 import unittest
 import squall
 from squallsql import Table, Fields, Value, Transaction, Where
-import squallsqlite3 as squallsqlite3
+import squallsqlite3 as sql3
 
 class Test(unittest.TestCase):
 
@@ -24,10 +24,10 @@ class Test(unittest.TestCase):
         self.sqlobj.sql('DROP TABLE IF EXISTS t;')
         self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
         
-        self.sqlselect = squallsqlite3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
-        self.sqlinsert = squallsqlite3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
-        self.sqldelete = squallsqlite3.Delete(Table('t'), Where('x', '=', Value(1)))
-        self.sqlupdate = squallsqlite3.Update(Table('t'), Fields('y', 'z'), 
+        self.sqlselect = sql3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
+        self.sqlinsert = sql3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        self.sqldelete = sql3.Delete(Table('t'), Where('x', '=', Value(1)))
+        self.sqlupdate = sql3.Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), Where('x', '=', Value(1)))
 
     def tearDown(self):
@@ -88,7 +88,7 @@ class Test(unittest.TestCase):
         self.assertRaises(squall.InvalidSquallObjectException, Transaction, self.sqlobj, self.sqlinsert, Value(3))
         print("Test: Sqlite3 Transactions")
         # --- Sqlite3 transaction specific class ---
-        sql3tran = squallsqlite3.Transaction(self.sqlobj)
+        sql3tran = sql3.Transaction(self.sqlobj)
         self.assertNotEqual(sql3tran, None, 'Sqlite3 Transaction is None')
         self.assertFalse(str(sql3tran), 'Sqlite3 transaction expected to be empty, is not')
         sqltran = Transaction(self.sqlobj)
@@ -98,12 +98,12 @@ class Test(unittest.TestCase):
     
     def testSqlite3Transaction(self):
         print("Test: Two Transaction Objects")
-        sql3tran = squallsqlite3.Transaction(self.sqlobj)
+        sql3tran = sql3.Transaction(self.sqlobj)
         print(str(sql3tran))
         sql3tran.add(self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
         sql3tran.run()
         
-        sql3tran2 = squallsqlite3.Transaction(self.sqlobj)
+        sql3tran2 = sql3.Transaction(self.sqlobj)
         sql3tran2.add(self.sqlselect) # So apparently selects do not cause rollbacks.
         #self.assertRaises(excClass, callableObj)
         print(str(sql3tran2.run()))

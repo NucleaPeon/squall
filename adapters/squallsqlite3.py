@@ -53,9 +53,10 @@ class SqlAdapter(squallsql.Squall):
                   and all other values will be ignored.
         '''
         db_host = 'localhost'
+        self.db_name = db_name
         if not kwargs.get('db_host') is None:
             db_host = kwargs.get('db_host')
-        self.conn = self.module.connect(db_name)
+        self.conn = self.module.connect(self.db_name)
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
     

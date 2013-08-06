@@ -54,6 +54,7 @@ class SqlAdapter(squallsql.Squall):
         #TODO: Connection checking
         self.conn = None
         connection_str = []
+        self.db_name = db_name
         
         # Assume sqlserver driver
         driver = kwargs.get('driver', 'SQL Server')
@@ -61,11 +62,11 @@ class SqlAdapter(squallsql.Squall):
         db_host = kwargs.get('db_host', 'localhost')
         if not db_host is None:
             connection_str.append('SERVER={}'.format(db_host))
-        if not db_name:
+        if not self.db_name:
             raise squall.AdapterException(
                 'Database not supplied to driver, cannot connect')
         else:
-            connection_str.append('DATABASE={}'.format(db_name))
+            connection_str.append('DATABASE={}'.format(self.db_name))
         if kwargs.get('trusted', False):
             connection_str.append('Trusted_Connection=yes')
             
@@ -388,10 +389,38 @@ class Transaction(squallsql.Transaction):
     
     :Description:
         Manages transactions from an sqlserver-specific perspective.
+        
+    :Parameters:
+        - adapter: object; sql database adapter object
+        - *args: list; arguments containing sql objects to add to transaction
+        - **kwargs: dict; specific arguments for managing the sql server transaction
+            - name: string; what to name the transaction statement
+            - command: string; COMMIT or ROLLBACK             
     '''
     
-    def __init__(self, adapter, *args):
+    def __init__(self, adapter, *args, **kwargs):
         super().__init__(adapter, *args)
+        self.tname = kwargs.get("name", "Default Transaction")
+        self.tpreamble = ['BEGIN TRANSACTION {};'.format(self.tname),
+                           'USE {}'.format(adapter.db_name)]
+        self.rollbackstring = 'SET xact_abort ON'
+        self.tdefaultcmd = kwargs.get('command', 'COMMIT')
+        self.tsuffix = '{} {} {}'.format(self.tdefaultcmd, 'TRANSACTION', 
+                                         self.tname)
+        if self.tdefaultcmd == 'ROLLBACK':
+            # Format string to set rollback on incorrect statement
+            # during transaction
+            self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
+                                             self.tpreamble)
+        self.cmds = self.tpreamble
+        self.cmds.extend(self.tobjects)
+        self.cmds.append(self.tsuffix)
+        self.tobjects = self.cmds # FIXME: Create objects for Rollback()
+        # and Commit() that will auto append their contents to the sql
+        # statement in the __repr__() method
+        # self.tobjects is from parent class
+        
+        # repr() should present this data just fine
     
 class Verbatim(squallsql.Sql):
     '''
