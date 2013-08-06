@@ -4,6 +4,8 @@
 # Author: Daniel Kettle
 # Date:   July 29 2013
 #
+# TODO: Group(), Having(), Order(), Union(), Except(), Intersect()
+#
 
 '''
 From the wiki of the pyodbc project:
@@ -294,6 +296,103 @@ class Insert(squallsql.Sql):
                                 mf,
                                 ', '.join(str(x) for x in self.values))
         
+class Select(squallsql.Sql):
+    '''
+    Select object that inherits Base Insert object in
+    squallsql. 
+    
+    Note: Same as sqlite3 driver, which this is based off of.
+    
+    :Description:
+        Sql Server Select object that properly formats insert statements
+        in sql server format.
+        
+    :Parameters:
+        - table: Table() object; 
+        - field: Fields() object;
+        - values: [Value()] object;
+    '''
+    
+    def __init__(self, table, fields, condition=None):
+        super().__init__('SELECT', table, fields, condition)
+        self.table = table
+        self.fields = fields
+        self.existsflag = False
+        if isinstance(condition, squallsql.Where):
+            self.condition = condition
+        elif isinstance(condition, squallsql.Exists):
+            # FIXME: Bad coding practice, may get rid of
+            self.existsflag = True
+        else: 
+            self.condition = ''
+        self.lastqueryresults = ''
+        
+    def __repr__(self):
+        #if self.existsflag:
+            #TODO
+#             return '''SELECT EXISTS({} FROM {} {})'''.format( 
+#              self.fields, self.table)
+        # Exists is not yet implemented            
+        return '''SELECT {} FROM {} {}'''.format( 
+             self.fields, self.table, self.condition) 
+    
+class Delete(squallsql.Sql):
+    def __init__(self, table, condition=None):
+        super().__init__('DELETE', table=table, condition=condition)
+        self.table = table
+        if isinstance(condition, squallsql.Where):
+            self.condition = condition
+        else:
+            self.condition = ''
+        
+    def __repr__(self):
+        return "DELETE FROM {} {}".format(self.table, self.condition)
+    
+class Update(squallsql.Sql):
+    
+    def __init__(self, table, field, values, condition=None):
+        super().__init__('UPDATE', table=table, field=field, values=values,
+                         condition=condition)
+        self.table = table
+        self.field = field
+        self.values = values
+        if condition is None:
+            self.condition = ''
+        else:
+            self.condition = condition
+    
+    def __parse_values(self, field, value):
+        return "{} = {}".format(field, value)
+        
+    def __repr__(self):
+        cond = ''
+        if not self.condition is None:
+            cond = ' {}'.format(str(self.condition))
+        params = []
+        
+        if len(self.field.fields) == 1:
+            # Not an array, but one field
+            if not isinstance(self.values, str):
+                raise squall.InvalidSqlValueException(
+                    'Non-Equal fields [1] to values [{}] ratio'.format(
+                        len(self.values)))
+            return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
+        for i in range(0, len(self.values)):
+            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
+        
+        return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
+    
+class Transaction(squallsql.Transaction):
+    '''
+    Sql Server Transaction object
+    
+    :Description:
+        Manages transactions from an sqlserver-specific perspective.
+    '''
+    
+    def __init__(self, adapter, *args):
+        super().__init__(adapter, *args)
+    
 class Verbatim(squallsql.Sql):
     '''
     :Description:
