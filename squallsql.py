@@ -423,7 +423,7 @@ class Transaction(Squall):
         return self.tobjects
     
     def __repr__(self):
-        return ', '.join(str(x) for x in self.tobjects)
+        return '\n'.join(str(x) for x in self.tobjects)
     
 class Verbatim(Sql):
     '''

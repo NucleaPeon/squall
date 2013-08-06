@@ -49,8 +49,8 @@ class Test(unittest.TestCase):
     def testUpdate(self):
         sqltran = tsql.Transaction(self.sqlobj, self.sqlinsert, self.sqlupdate)
         newselect = tsql.Select(Table('t'), Fields('*'), Where('z', '=', Value(9)))
-        sqltran.add(newselect, self.sqldelete).run()
-        #sqltran.run(success_callback=(lambda x: print("Success")))
+        sqltran.add(newselect, self.sqldelete)
+        sqltran.run()
         
 #         self.sqlobj.insert('INSERT INTO t (x, y, z) VALUES (?, ?, ?)', (5, 4, 3))
 #         self.sqlobj.update('UPDATE t SET y = ? WHERE x = ?', (9999, 5))
@@ -59,7 +59,6 @@ class Test(unittest.TestCase):
         
         
     def tearDown(self):
-        print("Closing connection to SQL Server on local machine")
         vbmsql = tsql.Verbatim('DROP TABLE t;')
         droptransaction = tsql.Transaction(self.sqlobj, vbmsql).run()
 

@@ -238,7 +238,7 @@ class SqlAdapter(squallsql.Squall):
             postcallback()
         return self.conn
     
-    def sql(self, sql):
+    def sql(self, sql, param=()):
         '''
         :Description:
             Executes the sql string
@@ -246,7 +246,7 @@ class SqlAdapter(squallsql.Squall):
         :Parameters:
             - sql: string; sql statement
         '''
-        self.cursor.execute(sql)
+        self.cursor.execute(sql, param)
         return self.conn
     
     def commit(self):
@@ -413,7 +413,9 @@ class Transaction(squallsql.Transaction):
             self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
                                              self.tpreamble)
         self.cmds = self.tpreamble
-        self.cmds.extend(self.tobjects)
+        # Tried using a generator, the generator got added
+        for x in self.tobjects:
+            self.cmds.append(str(x))
         self.cmds.append(self.tsuffix)
         
     def __repr__(self):

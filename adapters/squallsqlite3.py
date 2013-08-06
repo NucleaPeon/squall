@@ -147,8 +147,8 @@ class SqlAdapter(squallsql.Squall):
             postcallback()
         return self.conn
     
-    def sql(self, sql):
-        self.cursor.execute(sql)
+    def sql(self, sql, param=()):
+        self.cursor.execute(sql, param)
         return self.conn
     
     def commit(self):
