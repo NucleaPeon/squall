@@ -88,7 +88,7 @@ class SqlAdapter(squallsql.Squall):
         '''
         self.conn.close()
     
-    def insert(self, sql, params, precallback=None, postcallback=None):
+    def insert(self, sqlobject, precallback=None, postcallback=None):
         '''
         :Description:
             Database Adapter insert->sql method with callbacks for
@@ -126,7 +126,7 @@ class SqlAdapter(squallsql.Squall):
                            'sql':sqlobject})
         return self.conn
     
-    def update(self, sql, params, precallback=None, postcallback=None):
+    def update(self, sqlobject, precallback=None, postcallback=None):
         '''
         :Description:
             Database Adapter update->sql method with callbacks for
@@ -157,12 +157,12 @@ class SqlAdapter(squallsql.Squall):
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback()
         return self.conn
         
-    def select(self, sql, params, precallback=None, postcallback=None):
+    def select(self, sqlobject, precallback=None, postcallback=None):
         '''
         :Description:
             Database Adapter insert->sql method with callbacks for
@@ -197,12 +197,12 @@ class SqlAdapter(squallsql.Squall):
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback()
         return self.conn
         
-    def delete(self, sql, params, precallback=None, postcallback=None):
+    def delete(self, sqlobject, precallback=None, postcallback=None):
         '''
         :Description:
             Database Adapter delete->sql method with callbacks for
@@ -233,7 +233,7 @@ class SqlAdapter(squallsql.Squall):
         '''
         if not precallback is None:
             precallback()
-        self.sql(sql, params)
+        self.sql(str(sqlobject))
         if not postcallback is None:
             postcallback()
         return self.conn
@@ -293,7 +293,7 @@ class Insert(squallsql.Sql):
         mf = self.field
         if self.field.fields != '':
             mf = '{}{}{}'.format(' (', mf, ')')
-        return "INSERT INTO {}{} VALUES ({})".format(self.table, 
+        return "INSERT INTO {}{} VALUES ({});".format(self.table, 
                                 mf,
                                 ', '.join(str(x) for x in self.values))
         
@@ -334,7 +334,7 @@ class Select(squallsql.Sql):
 #             return '''SELECT EXISTS({} FROM {} {})'''.format( 
 #              self.fields, self.table)
         # Exists is not yet implemented            
-        return '''SELECT {} FROM {} {}'''.format( 
+        return '''SELECT {} FROM {} {};'''.format( 
              self.fields, self.table, self.condition) 
     
 class Delete(squallsql.Sql):
@@ -347,7 +347,7 @@ class Delete(squallsql.Sql):
             self.condition = ''
         
     def __repr__(self):
-        return "DELETE FROM {} {}".format(self.table, self.condition)
+        return "DELETE FROM {} {};".format(self.table, self.condition)
     
 class Update(squallsql.Sql):
     
@@ -381,7 +381,7 @@ class Update(squallsql.Sql):
         for i in range(0, len(self.values)):
             params.append(self.__parse_values(self.field.fields[i], self.values[i]))
         
-        return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
+        return "UPDATE {} SET {}{};".format(self.table, ', '.join(params), cond)
     
 class Transaction(squallsql.Transaction):
     '''
@@ -401,9 +401,9 @@ class Transaction(squallsql.Transaction):
     def __init__(self, adapter, *args, **kwargs):
         super().__init__(adapter, *args)
         self.tname = kwargs.get("name", "Default Transaction")
-        self.tpreamble = ['BEGIN TRANSACTION {};'.format(self.tname),
-                           'USE {}'.format(adapter.db_name)]
-        self.rollbackstring = 'SET xact_abort ON'
+        self.tpreamble = ['USE {};'.format(adapter.db_name), 
+                          'BEGIN TRANSACTION {};'.format(self.tname)]
+        self.rollbackstring = 'SET xact_abort ON;'
         self.tdefaultcmd = kwargs.get('command', 'COMMIT')
         self.tsuffix = '{} {} {}'.format(self.tdefaultcmd, 'TRANSACTION', 
                                          self.tname)
@@ -415,12 +415,10 @@ class Transaction(squallsql.Transaction):
         self.cmds = self.tpreamble
         self.cmds.extend(self.tobjects)
         self.cmds.append(self.tsuffix)
-        self.tobjects = self.cmds # FIXME: Create objects for Rollback()
-        # and Commit() that will auto append their contents to the sql
-        # statement in the __repr__() method
-        # self.tobjects is from parent class
         
-        # repr() should present this data just fine
+    def __repr__(self):
+        return '\n'.join(self.cmds)
+        
     
 class Verbatim(squallsql.Sql):
     '''

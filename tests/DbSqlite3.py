@@ -21,8 +21,8 @@ class Test(unittest.TestCase):
         # Sqlite3 database
         self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
         self.module = squall.db('sqlite3')
-        self.sqlobj.sql('DROP TABLE IF EXISTS t;')
-        self.sqlobj.sql('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
+        sql3.Verbatim('DROP TABLE IF EXISTS t;')
+        sql3.Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')
         
         self.sqlselect = sql3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
         self.sqlinsert = sql3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
@@ -31,7 +31,7 @@ class Test(unittest.TestCase):
                                               (Value(5), Value(9)), Where('x', '=', Value(1)))
 
     def tearDown(self):
-        self.sqlobj.sql('DROP TABLE IF EXISTS t;')
+        sql3.Verbatim('DROP TABLE IF EXISTS t;')
         self.sqlobj.disconnect()
         del self.sqlobj
         
