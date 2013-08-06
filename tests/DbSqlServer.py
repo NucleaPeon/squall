@@ -29,46 +29,39 @@ class Test(unittest.TestCase):
     
         assert not self.module is None, 'Python Driver not imported successfully'
         assert not self.sqlobj is None, 'Squallserver not imported correctly or invalid'
-        tsql.Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x));')
-        self.sqlobj.commit()
+        vbmsql = tsql.Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x));')
+        createtransaction = tsql.Transaction(self.sqlobj, vbmsql).run()
     
     def testSelect(self):
         print("Test: Select Insert Statement")
-        assert self.sqlobj.select(str(self.sqlselect)), 'Select Statement Errored'
+        # , self.sqlselect, self.sqldelete
+        
+        #sqltran = tsql.Transaction(self.sqlobj, self.sqlinsert)
         print(self.sqlselect)
  
     def testInsertAndDelete(self):
         print("Test: Inserting test data into t table")
         sqltran = tsql.Transaction(self.sqlobj)
         self.assertRaises(squall.EmptyTransactionException, sqltran.run)
-        sqltran.add(self.sqlinsert)
+        sqltran.add(self.sqlinsert, self.sqlselect, self.sqldelete)
+        print("Test: Selecting data we inserted")
+ 
+    def testUpdate(self):
+        sqltran = tsql.Transaction(self.sqlobj, self.sqlinsert, self.sqlupdate)
+        newselect = tsql.Select(Table('t'), Fields('*'), Where('z', '=', Value(9)))
+        sqltran.add(newselect, self.sqldelete).run()
+        #sqltran.run(success_callback=(lambda x: print("Success")))
         
-#         self.sqlobj.insert(str(self.sqlinsert))
-#         self.sqlobj.commit()
-        
-#         print("Test: Selecting data we inserted")
-#         self.sqlobj.select(str(self.sqlselect))
-#         # Should error if fails
-#         self.sqlobj.delete(str(self.sqldelete))
-#         self.sqlobj.commit()
-# 
-#     def testUpdate(self):
-#         print("Test: Inserting a record")
 #         self.sqlobj.insert('INSERT INTO t (x, y, z) VALUES (?, ?, ?)', (5, 4, 3))
-#         print("Test: Updateding a record")
 #         self.sqlobj.update('UPDATE t SET y = ? WHERE x = ?', (9999, 5))
-#         print("Test: Selecting Record")
-#         self.sqlobj.commit()
-#         print("Test: Select Statement")
 #         self.sqlobj.select('SELECT x, y, z FROM t WHERE y = 9999', ())
 #         self.sqlobj.delete('DELETE FROM t WHERE x = 5', ())
-#         self.sqlobj.commit()
         
         
     def tearDown(self):
         print("Closing connection to SQL Server on local machine")
-        tsql.Verbatim('DROP TABLE t;')
-        self.sqlobj.commit()
+        vbmsql = tsql.Verbatim('DROP TABLE t;')
+        droptransaction = tsql.Transaction(self.sqlobj, vbmsql).run()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
