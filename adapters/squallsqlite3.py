@@ -158,6 +158,14 @@ class SqlAdapter(squallsql.Squall):
         self.cursor.execute(str(sql), param)
         return self.conn
     
+    def sql_compat(self, sql, param=()):
+        '''
+        Compatibility (temporary) sql method to force return of rows in 
+        the execute call. 
+        '''
+        self.cursor.execute(str(sql, param))
+        return self.cursor.fetchall()
+    
     def commit(self):
         '''
         Deprecated in favour of Transaction objects
