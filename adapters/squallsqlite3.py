@@ -163,7 +163,7 @@ class SqlAdapter(squallsql.Squall):
         Compatibility (temporary) sql method to force return of rows in 
         the execute call. 
         '''
-        self.cursor.execute(str(sql, param))
+        self.cursor.execute(sql, param)
         return self.cursor.fetchall()
     
     def commit(self):
