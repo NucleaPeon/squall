@@ -308,7 +308,7 @@ class Fields(Squall):
             args = ['*']
         else:
             if not type(args) in [list, tuple]:
-                raise InvalidSqlValueException(
+                raise squall.InvalidSqlValueException(
                         'Value is neither a wildcard char nor a list or tuple')
         self.fields = args
                 
@@ -396,7 +396,7 @@ class Transaction(Squall):
             raise squall.EmptyTransactionException('No objects to execute')
         for tobj in self.tobjects:
             if not isinstance(tobj, Sql):
-                raise squall.InvalidSquallObjectExecption('{} is invalid'.format(
+                raise squall.InvalidSquallObjectException('{} is invalid'.format(
                     str(tobj)))
             
         for squallobj in self.tobjects:
@@ -413,14 +413,14 @@ class Transaction(Squall):
             raise squall.EmptyTransactionException('No objects to execute')
         for tobj in self.tobjects:
             if not isinstance(tobj, Sql):
-                raise squall.InvalidSquallObjectExecption('{} is invalid'.format(
+                raise squall.InvalidSquallObjectException('{} is invalid'.format(
                     str(tobj)))
                 
         try:
             for squallobj in self.tobjects:
                 self.adapter.sql(str(squallobj))
             self.adapter.rollback()
-        except Exception as E:
+        except Exception:
             raise squall.RollbackException(
                 'Exception raised: {}'.format(sys.exc_info()[0]))
         return self.tobjects
