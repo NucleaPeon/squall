@@ -89,9 +89,12 @@ class Test(unittest.TestCase):
          
     def testSelectReturn(self):
         print("Testing return value of Select")
-        self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
+        t = self.driver.Transaction(self.driver.Insert(
+                Table('t'), Fields(), [Value(1), Value(2), Value(3)]))
         sqlselect = self.driver.Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
-        output = self.driver.Transaction(sqlselect).run()
+        t.add(sqlselect)
+        print(str(sqlselect))
+        output = t.run()
         print(str(output))
         assert isinstance(output[str(sqlselect)], list), 'Expected a list, got {}'.format(str(output))
         assert isinstance(output[str(sqlselect)][0], tuple), 'Expected tuple as a result, got {}'.format(type(output[0]))

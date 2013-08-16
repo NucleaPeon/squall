@@ -136,8 +136,7 @@ class SqlAdapter(object):
         def __init__(self, *args, **kwargs):
             self.tobjects = []
             self.output = {}
-            for a in args:
-                self.add(a) # Will raise exception if invalid object found
+            self.add(*args)
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             if self.adapter is None:
                 raise MissingDatabaseAdapterException('No adapter object to connect to')

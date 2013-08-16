@@ -11,8 +11,6 @@ TODO: How to init an adapter, how to call it/close it
 FIXME: Threading 
 '''
 
-import sys
-
 ADAPTERS = {'sqlite3' : None,
             'sqlserver': None, # Uses odbc drivers
             'mysql': None,
