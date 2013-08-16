@@ -24,8 +24,8 @@ Functionality that must be sustained:
 * INSERT
 * UPDATE
 * DELETE
-* (if applicable) Change Database on the Fly -- sqlite3 requires the path.
-* Safe Transactions (rollback on error)
+* DROP
+* CREATE
 
 This software aims to be a solid single-threaded application first and 
 foremost. Multi-threading can be implemented at a later date.
@@ -48,8 +48,10 @@ OR
 Sqlite3 
 ---------
 ```
-import squall
-self.sqlobj = squall.Session().connect('my.db', adapter='sqlite3')
-self.module = squall.db('sqlite3')
+import squallsql
+driver = squallsql.SqlAdapter(driver='squallsqlite3', 
+                                  database='rfid.db')
 ```
+
+( driver will automatically attempt a connection )
  
