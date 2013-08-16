@@ -6,6 +6,18 @@ Database Adapter for multiple sql vendors, one command fits all.
 Some functionality of the RDBMS may be squelched for massive
 compatibility of all relational databases.
 
+Recent Activity
+====
+
+Been moving classes around trying to get an easy-to-use setup.
+If I want functionality in classes that represent sql objects
+(Select, Insert, Where, Delete, etc.), I may have to add them
+to the driver module. 
+I am debating removing the class object of the SqlAdapter,
+putting it straight into the module.
+
+Databases
+====
 A list of databases I want to utilize in this adapter software are:
 
 * sqlite3 - successfully written, basic tests implemented
