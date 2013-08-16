@@ -130,6 +130,32 @@ class Condition(Squall):
     def __init__(self, conditions = []):
         super().__init__()
 
+class Drop(Sql):
+    
+    def __init__(self, table, exists=None, **kwargs):
+        super().__init__('DROP', table, exists, **kwargs)
+        self.table = table
+        self.exists = exists
+        
+    def __repr__(self):
+        if not self.exists is None:  
+            return "DROP {} {} {}".format('TABLE', self.exists, self.table)
+        return "DROP {} {}".format('TABLE', self.table)
+
+class Create(Sql):
+    
+    def __init__(self, table, fields, constraints = [], **kwargs):
+        super().__init__('CREATE', table, fields, constraints, **kwargs)
+        self.table = table
+        self.fields = fields
+        self.constraints = constraints
+        
+    def __repr__(self):
+        return 'CREATE TABLE {}({}, {})'.format(self.table, 
+                                            ', '.join(self.fields),
+                                            ', '.join(self.constraints))
+    
+
 class Select(Sql):
     
     def __init__(self, table, fields, condition=[], **kwargs):
