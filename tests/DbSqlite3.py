@@ -10,109 +10,94 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-import squall
-from squallsql import Table, Fields, Value, Transaction, Where
-import squallsqlite3 as sql3
+from squall import Table, Fields, Value, Where, Verbatim
+import squallsql, sqlite3
 
 class Test(unittest.TestCase):
+    
+    driver = squallsql.SqlAdapter(driver='squallsqlite3', 
+                                  database='rfid.db')
 
     def setUp(self):
-        # Sqlite3 database
-        self.sqlobj = squall.Session().connect('rfid.db', adapter='sqlite3')
-        self.module = squall.db('sqlite3')
-        trns = sql3.Transaction(self.sqlobj, sql3.Verbatim('DROP TABLE IF EXISTS t;'),
-                                sql3.Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));')).run()
-        
-        self.sqlselect = sql3.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
-        self.sqlinsert = sql3.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
-        self.sqldelete = sql3.Delete(Table('t'), Where('x', '=', Value(1)))
-        self.sqlupdate = sql3.Update(Table('t'), Fields('y', 'z'), 
-                                              (Value(5), Value(9)), Where('x', '=', Value(1)))
+        self.driver.Connect(database='rfid.db')
+        assert not self.driver is None, 'Driver is not initialized'
+        assert not self.driver.sqladapter is None, 'Sql Adapter not initialized'
+        trans = self.driver.Transaction() # Requires the sql() method
+        # FIXME: Transaction should call squallsqlite3 driver which fills in adapter
+        trans.add(Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));'))
+        trans.run()
 
     def tearDown(self):
-        sql3.Verbatim('DROP TABLE IF EXISTS t;')
-        self.sqlobj.disconnect()
-        del self.sqlobj
-        
-    def testSqliteInsert(self):
-        print("Test: Sqlite3 Insert")
-        self.assertEqual(str(self.sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
-        assert self.sqlobj.insert(str(self.sqlinsert)), 'Failed Sqlite3 Insert'
-        print("Test: Select Insert Statement")
-        assert self.sqlobj.select(self.sqlselect), 'Select Statement Errored'
-         
-    def testSqliteDelete(self):
-        print("Test: Sqlite3 Insert")
-        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
-        self.sqlobj.commit()
-        print("Test: Select Insert Statement")
-        rows = self.sqlobj.select(self.sqlselect)
-        assert len(rows) > 0, 'Select Statement Errored'
-        print(str(rows))
-        print("Test: Delete Insert")
-        
-        assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
-        self.sqlobj.commit()
-         
-    def testSqliteUpdate(self):
-        print("Test: Sqlite3 Insert")
-         
-        assert self.sqlobj.insert(self.sqlinsert), 'Failed Sqlite3 Insert'
-        self.sqlobj.commit()
-         
-        print("Test: Sqlite3 Insert")
-        print(str(self.sqlupdate))
-        assert self.sqlobj.update(self.sqlupdate), 'Failed Sqlite3 Insert'
-        self.sqlobj.commit()
-         
-        print("Test: Select Insert Statement")
-        assert self.sqlobj.select(self.sqlselect), 'Select Statement Errored'
-         
-        print("Test: Delete Insert")
-        assert self.sqlobj.delete(self.sqldelete), 'Delete Statement Errored'
-        self.sqlobj.commit()
+        trans = self.driver.Transaction()
+        trans.add(Verbatim('DROP TABLE IF EXISTS t;'))
+        trans.run()
+        self.driver.Disconnect()
          
     def testTransaction(self):
-        print("Test: Transaction Init (no errors)")
-        sqltran = Transaction(self.sqlobj, self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
-        assert str(self.sqlinsert) in str(sqltran), 'Could not find sql  insert object in transaction' 
-        print("Test: Empty Transactions")
-        sqltran = Transaction(self.sqlobj)
-        self.assertRaises(squall.EmptyTransactionException, sqltran.run)
-        print("Test: Adding Transactions to empty Transaction")
-        sqltran.add(self.sqlinsert)
-        sqltran.add(self.sqlselect)
-        self.assertRaises(squall.CommitException, sqltran.run, raise_exception=True)
-        print("Test: Transaction Init (with errors)")
-        self.assertRaises(squall.InvalidSquallObjectException, Transaction, self.sqlobj, self.sqlinsert, Value(3))
-        print("Test: Sqlite3 Transactions")
-        # --- Sqlite3 transaction specific class ---
-        sql3tran = sql3.Transaction(self.sqlobj)
-        self.assertNotEqual(sql3tran, None, 'Sqlite3 Transaction is None')
-        self.assertFalse(str(sql3tran), 'Sqlite3 transaction expected to be empty, is not')
-        sqltran = Transaction(self.sqlobj)
-        self.assertEqual(str(sql3tran), str(sqltran), 'Incompatibility between sql3 and base sql transactions')
-        sqltran.add(self.sqlselect)
-        self.assertRaises(squall.RollbackException, sqltran.pretend)
-    
-    def testSqlite3Transaction(self):
-        print("Test: Two Transaction Objects")
-        sql3tran = sql3.Transaction(self.sqlobj)
-        print(str(sql3tran))
-        sql3tran.add(self.sqlinsert, self.sqlselect, self.sqlupdate, self.sqldelete)
-        sql3tran.run()
+        trans = self.driver.Transaction()
+        assert not trans is None, 'Transaction object is None'
         
-        sql3tran2 = sql3.Transaction(self.sqlobj)
-        sql3tran2.add(self.sqlselect) # So apparently selects do not cause rollbacks.
-        #self.assertRaises(excClass, callableObj)
-        print(str(sql3tran2.run()))
         
+    def testSqliteAdapter(self):
+        assert not self.driver.sqladapter is None, 'Sql Adapter not initialized'
+        # Must have a connected sql adapter before this will pass
+        assert not self.driver.sqladapter.conn is None, 'Connection not initialized'
+        assert not self.driver.sqladapter.cursor is None, 'Cursor not initialized'
+        
+    def testInsertDeleteUpdate(self):
+        print("Test: Sqlite3 Select, Insert, Delete and Update")
+        trans = self.driver.Transaction()
+        self.sqlselect = self.driver.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
+        assert not self.sqlselect is None, 'Select() object not initialized'
+        trans.add(self.sqlselect)
+        self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        assert not self.sqlinsert is None, 'Insert() object not initialized'
+        trans.add(self.sqlinsert)
+        self.sqldelete = self.driver.Delete(Table('t'), Where('x', '=', Value(1)))
+        assert not self.sqldelete is None, 'Delete() object not initialized'
+        trans.add(self.sqldelete)
+        self.sqlupdate = self.driver.Update(Table('t'), Fields('y', 'z'), 
+                                              (Value(5), Value(9)), 
+                                               Where('x', '=', Value(1)))
+        assert not self.sqlupdate is None, 'Update() object not initialized'
+        trans.add(self.sqlupdate)
+        trans.run()
+         
+    def testSqliteInsert(self):
+        print("Test: Sqlite3 Insert")
+        self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        self.assertEqual(str(self.sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
+        # TODO: Add non-committed insert, attempt select on it (expect fail), then insert and select (success)
+          
+    def testSqliteDelete(self):
+        print("Test: Sqlite3 Insert and Delete")
+        trans = self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
+                                        self.driver.Delete(Table('t'), Where('x', '=', Value(1))))
+        trans2 = self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
+                                        self.driver.Delete(Table('t'), Where('x', '=', Value(1))))
+        trans.run()
+        print("Test: Sqlite3 force rollback on Insert/Delete transaction")
+        self.assertRaises(sqlite3.IntegrityError, trans2.run, force='rollback')
+          
+    def testSqliteUpdate(self):
+        print("Test: Sqlite3 Insert and Update")
+        self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
+        self.driver.Transaction(self.driver.Update(Table('t'), Fields('y', 'z'), 
+                                              (Value(5), Value(9)), 
+                                               Where('x', '=', Value(1)))).run()
+
+         
     def testSelectReturn(self):
         print("Testing return value of Select")
-        output = sql3.Transaction(self.sqlobj, self.sqlselect).run()
+        self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
+        sqlselect = self.driver.Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
+        output = self.driver.Transaction(sqlselect).run()
         print(str(output))
-        assert isinstance(output, list), 'Expected a list, got {}'.format(str(output))
-        assert isinstance(output[0], tuple), 'Expected tuple as a result, got {}'.format(type(output[0]))
+        assert isinstance(output[str(sqlselect)], list), 'Expected a list, got {}'.format(str(output))
+        assert isinstance(output[str(sqlselect)][0], tuple), 'Expected tuple as a result, got {}'.format(type(output[0]))
+        
+    def testSqlAdapterDriver(self):
+        assert not self.driver is None, 'SqlAdapter driver is None'
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

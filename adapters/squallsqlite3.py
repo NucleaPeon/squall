@@ -4,59 +4,59 @@
 # Author: Daniel Kettle
 # Date:   July 29 2013
 #
-
+# FIXME: _instance to SqlAdapter(), remove kwargs dependency on adapter keyword.
+#        add kwargs for all parameters. table=Table(), fields=Field(), etc.
 '''
 squallsqlite3 is the Squall SqlAdapter class for sqlite3 databases
 
 Basic Overview:
-    Do not call the adapter methods directly.
+    This python module contains sqlite3 specific code that is accessed through
+    the generic SqlAdapter in squallsql.
     
-    Use squallsqlite3.Insert()
-        instead of 
-    squallsqlite3.SqlAdapter.insert()
-    
-    The reason for this is that the adapter's insert() method also controls
-    how the sql interacts with the databaser via the connection and driver.
-    Using the TitleCase classes that are globally available, you interact
-    with dynamic objects that will not cause damage to the database unless
-    used in a Transaction object, which is safer and better practice,
-    in addition to allowing you to handle exceptions from a centralized
-    place.
-
-
+    It is recommended that the user use Transaction objects (also found in
+    squallsql) instead of direct adapter sql/sql_compat methods
 '''
 
-import sys, os
-sys.path.append(os.path.join('..'))
+from squall import Sql, MissingDatabaseAdapterException, InvalidSquallObjectException, \
+    EmptyTransactionException, CommitException, RollbackException
+import sys
+import squall, sqlite3
 
-import squallsql, squall # for exceptions
-
-class SqlAdapter(squallsql.Squall):
+class SqlAdapter(object):
     '''
-    API for calling sqlite3
-    
-    Expects the sqlite3 module as module parameter
+    :Description:
+        API for calling sqlite3 database
     '''
+    conn = None
+    cursor = None
     
-    def __init__(self, module):
-        super().__init__()
-        self.module = module
+    _instance = None
+    def __new__(self, *args, **kwargs):
+        if not self._instance:
+            self._instance = super().__new__(self)
+        return self._instance
+        
     
-    def connect(self, db_name, **kwargs):
+    def connect(self, *args, **kwargs):
         '''
         :Description:
         
         :Parameters:
-            - db_name: string; name of database file
             - **kwargs: dictionary; contains keywords and associated values:
-                - db_host: string; hostname -- in sqlite3, only localhost is applicable
+                - host: string; hostname -- in sqlite3, only localhost is applicable
                   and all other values will be ignored.
+                - database: string; location of database file
         '''
+        if not self.conn is None:
+            return self.conn
         db_host = 'localhost'
-        self.db_name = db_name
-        if not kwargs.get('db_host') is None:
-            db_host = kwargs.get('db_host')
-        self.conn = self.module.connect(self.db_name)
+        self.db_name = kwargs.get('database', None)
+        if self.db_name is None:
+            raise squall.InvalidDatabaseNameException(
+                'Did not find database name parameter with SqlAdapter init')
+        if not kwargs.get('host') is None:
+            db_host = kwargs.get('host')
+        self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
     
@@ -66,102 +66,17 @@ class SqlAdapter(squallsql.Squall):
             Disconnect the driver from the database.
         '''
         self.conn.close()
+        self.conn = None
     
-    def insert(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        :Description:
-            Database Adapter insert->sql method with callbacks for
-            added functionality. This allows users to support logging
-            and additional commits.
-        
-        :See:
-            Transaction:
-                Since insert/update/delete require commit to perform, 
-                multiple methods can be placed into a transaction and
-                can all be commited at once.
-                
-                In order to utilize this functionality, callbacks are 
-                required. Use the postcallback() to return the sql string.
-            
-        :Parameters:
-            Parameters that are submitted to both callback methods are
-            as follows:
-            - method: this insert method is supplied
-            - module: this class so that multiple methods can be strung 
-              together
-              main non-query is submitted
-            - sql: this is the sql structure object or string that contains
-              the fields, tables and conditions for the statement
-            
-            
-        :Returns:
-            - connection object
-        '''
-        if not precallback is None:
-            # Submit parameters as a non-required dictionary
-            precallback(**{'method':self.insert, 'class':self, 
-                           'sql':sqlobject})
-        conn = self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback(**{'method':self.insert, 'class':self, 
-                           'sql':sqlobject})
-        return self.conn
-    
-    def update(self, sql, precallback=None, postcallback=None):
-        '''
-        Go directly to sql(), if any update specific code is required,
-        put it here.
-        '''
-        if not precallback is None:
-            precallback(**{'method':self.update, 'class':self,
-                           'sql':sql})
-        self.sql(str(sql))
-        if not postcallback is None:
-            postcallback(**{'method':self.update, 'class':self,
-                           'sql':sql})
-        return self.conn        
-    
-    def select(self, sql, precallback=None, postcallback=None):
-        '''
-        :Description:
-            In order to get the sql results in the postcallback, look for the
-            'result' **kwargs in the postcallback method. You will need to set
-            the method parameter with **kwargs in order to do so. 
-            
-        :Returns:
-            - list: sql results of query in a tuple [(row1 data), (rowN data)]
-                - rowN data represents the fields selected
-        '''
-        if not precallback is None:
-            precallback(**{'method':self.update, 'class':self,
-                           'sql':sql})
-        self.sql(str(sql)) 
-        results = self.cursor.fetchall()
-        if not postcallback is None:
-            postcallback(**{'method':self.update, 'class':self,
-                           'sql':sql, 'result':results})
-        return results
-        
-    def delete(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        Go directly to sql(), if any delete specific code is required,
-        put it here.
-        '''
-        if not precallback is None:
-            precallback()
-        self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback()
-        return self.conn
-    
-    def sql(self, sql, param=()):
-        self.cursor.execute(str(sql), param)
+    def sql(self, sqlobject):
+        self.cursor.execute(str(sqlobject))
         return self.conn
     
     def sql_compat(self, sql, param=()):
         '''
         Compatibility (temporary) sql method to force return of rows in 
         the execute call. 
+        No transaction capabilities in this method.
         '''
         self.cursor.execute(sql, param)
         return self.cursor.fetchall()
@@ -185,132 +100,151 @@ class SqlAdapter(squallsql.Squall):
         :Description:
             Explicitly invoke a rollback exception for sqlite3
         '''
-        raise self.module.IntegrityError()
+        raise sqlite3.IntegrityError()
     
-class Insert(squallsql.Sql):
-    def __init__(self, table, field, values):
-        super().__init__('INSERT', table, field, values)
-        self.table = table
-        self.field = field
-        self.values = values
+
         
-    def __repr__(self):
-        mf = self.field
-        if self.field.fields != '':
-            mf = '{}{}{}'.format(' (', mf, ')')
-        return "INSERT INTO {}{} VALUES ({})".format(self.table, 
-                                mf,
-                                ', '.join(str(x) for x in self.values))
-        
-class Select(squallsql.Sql):
-    def __init__(self, table, fields, condition=None, precallback=None,
-                 postcallback=None):
+    class Transaction(squall.Sql):
         '''
         :Description:
-        :Parameters:
-            - precallback: method; passed to the Transaction object which passes
-              it to the sqlobj (adapter) .select() statement
-            - postcallback: method; passed to the Transaction object which passes
-              it to the sqlobj (adapter) .select() statement. Adding a method 
-              here which garners the kwargs.get('result') call will fetch 
-              results of the statement.  
-        '''
-        super().__init__('SELECT', table, fields, condition, precallback,
-                         postcallback=None)
-        self.table = table
-        self.fields = fields
-        self.existsflag = False
-        if isinstance(condition, squallsql.Where):
-            self.condition = condition
-        elif isinstance(condition, squallsql.Exists):
-            # FIXME: Bad coding practice, may get rid of
-            self.existsflag = True
-        else: 
-            self.condition = ''
-        self.lastqueryresults = ''
-        
-    def __repr__(self):
-        if self.existsflag:
-            return '''SELECT EXISTS({} FROM {} {})'''.format( 
-             self.fields, self.table)
+            Transaction object that takes a list of Squall Command objects and will
+            commit() or rollback() based on whether one failure is detected.
             
-        return '''SELECT {} FROM {} {}'''.format( 
-             self.fields, self.table, self.condition) 
+            This object contains two main methods: run() and pretend()
+            pretend() imitates run() but regardless of options, will not run commit()
+            run() will attempt to commit unless an exception is raised.
+            See run() method for parameter listings
+            
+            It is recommended that one overrides this class in their database
+            driver/adapter class so they can integrate better with their own objects
+            and make use of callbacks/sql exceptions
+            
+        :Parameters:
+            - **kwargs: dict;
+                - adapter: object; committing and rolling back statements hinges on
+                  this object. Requires commit() and rollback(). Raises a 
+                  MissingDatabaseAdapterException if None is supplied.
+                  Defaults to the instance of the driver class this method is 
+                  implemented in.
+                - precallback: method; during run() method, this will get called 
+                  before commit or rollback statement.
+                  TODO: list params method can use
+                - postcallback: method; during run() method, this will get called
+                  after commit or rollback statement.
+                  TODO: list params method can use
+        '''
+        def __init__(self, *args, **kwargs):
+            self.tobjects = []
+            self.output = {}
+            for a in args:
+                self.add(a) # Will raise exception if invalid object found
+            self.adapter = kwargs.get('adapter', SqlAdapter._instance)
+            if self.adapter is None:
+                raise MissingDatabaseAdapterException('No adapter object to connect to')
+            
+        def add(self, *args):
+            '''
+            :Returns:
+                - args: list; all sqlobjects that were provided as arguments
+            '''
+            for a in args:
+                if not isinstance(a, squall.Sql):
+                    if isinstance(a, str):
+                        self.tobjects.append(squall.Verbatim(a))
+                        continue
+                    else:
+                        raise InvalidSquallObjectException(
+                            'Cannot add non-sql object {}'.format(str(a)))
+                self.tobjects.append(a)
+            return args
+                
+        def clear(self):
+            '''
+            :Returns:
+                All the transaction's current sql output from selects
+            '''
+            output = self.output
+            self.output = {}
+            self.tobjects = []
+            return output
+            
+        def run(self, *args, **kwargs):
+            '''
+            :Description:
+                Goes through every Squall Command object and runs the sql through
+                the adapter object supplied. (When an adapter class overrides this
+                method, it should supply the adapter automatically, so only args
+                need to be supplied.)
+                Raises an exception and attempts to rollback when an exception
+                is found, meaning an error arose during sql execution.
+                commit() is called if no errors during execution occur.
+                
+            :Parameters:
+                - **kwargs: dict; 
+                    - rollback_callback: If a rollback is called, call this method
+                    - success_callback: If Transaction completes as expected, call this
+                      method
+                    - raise_exception: boolean; raise exceptions on execution completion
+                      or error. (great for stricter environments) This does mean that
+                      no return statements will be called unless embedded into the error
+                      message or object. 
+                    - force: either "commit" or "rollback" is acceptable.
+                            
+            :Exceptions:
+                - EmptyTransactionException: Called when *args is empty and nothing
+                  can be run
+                - RollbackException: when raise_exception is True, committing and
+                  rolling back will raise an exception. This is raised when a 
+                  rollback is encountered.
+                - CommitException: when raise_exception is True, committing and
+                  rolling back will raise an exception. This is raised when a 
+                  commit is successful.
+                - InvalidSquallObjectException - If at any point an AdapterException
+                  is raised during execution of sql objects.
+                  
+            :Returns:
+                - None if rollback occured and transaction failed,
+                - list if successful commit, list contains all transaction objects
+            '''
+            if len(self.tobjects) == 0:
+                raise EmptyTransactionException('No objects to execute')
+            for tobj in self.tobjects:
+                if not isinstance(tobj, squall.Sql):
+                    raise InvalidSquallObjectException('{} is invalid'.format(
+                        str(tobj)))
+                
+            for squallobj in self.tobjects:
+                if isinstance(squallobj, squall.Select):
+                    self.output[str(squallobj)] = self.adapter.sql_compat(str(squallobj))
+                else:
+                    self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
+                # via sqlite3, so we don't have to check for this. Other db's will have
+                # to reimplement this.
+            if kwargs.get('force') == 'rollback':
+                self.adapter.rollback()
+            else:
+                self.adapter.commit()
+            if not kwargs.get('raise_exception') is None:
+                raise CommitException('Committed Transaction')
+            return self.clear()
+                
+        def pretend(self):
+            if len(self.tobjects) == 0:
+                raise EmptyTransactionException('No objects to execute')
+            for tobj in self.tobjects:
+                if not isinstance(tobj, Sql):
+                    raise InvalidSquallObjectException('{} is invalid'.format(
+                        str(tobj)))
+                    
+            try:
+                for squallobj in self.tobjects:
+                    self.adapter.sql(str(squallobj))
+                self.adapter.rollback()
+            except Exception:
+                raise RollbackException(
+                    'Exception raised: {}'.format(sys.exc_info()[0]))
+            return self.tobjects
         
-class Delete(squallsql.Sql):
-    def __init__(self, table, condition=None):
-        super().__init__('DELETE', table=table, condition=condition)
-        self.table = table
-        if isinstance(condition, squallsql.Where):
-            self.condition = condition
-        else:
-            self.condition = ''
-        
-    def __repr__(self):
-        return "DELETE FROM {} {}".format(self.table, self.condition)
-        
-class Update(squallsql.Sql):
-    def __init__(self, table, field, values, condition=None):
-        super().__init__('UPDATE', table=table, field=field, values=values,
-                         condition=condition)
-        self.table = table
-        self.field = field
-        self.values = values
-        if condition is None:
-            self.condition = ''
-        else:
-            self.condition = condition
-        
-    def __parse_values(self, field, value):
-        return "{} = {}".format(field, value)
-        
-    def __repr__(self):
-        cond = ''
-        if not self.condition is None:
-            cond = ' {}'.format(str(self.condition))
-        params = []
-        
-        if len(self.field.fields) == 1:
-            # Not an array, but one field
-            if not isinstance(self.values, str):
-                raise squall.InvalidSqlValueException(
-                    'Non-Equal fields [1] to values [{}] ratio'.format(
-                        len(self.values)))
-            return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
-        for i in range(0, len(self.values)):
-            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
-        
-        return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)
-        
-class Transaction(squallsql.Transaction):
-    '''
-    Sqlite3 Transaction object
-    
-    :Description:
-        Manages transactions from an sqlite3-specific perspective.
-        Because sqlite3 already includes transaction functionality,
-        we can utilize the base object in squallsql.
-        
-        Rollbacks raise an exception.
-    '''
-    
-    def __init__(self, adapter, *args):
-        super().__init__(adapter, *args)
-        
-        
-class Verbatim(squallsql.Sql):
-    '''
-    :Description:
-        Verbatim is a class whose purpose is to pipe direct
-        string sql commands into the database driver. This is to
-        allow customization by preference of the developer.
-    '''
-    # TODO
-    def __init__(self, sql):
-        self.sql = sql
-        
-    def __repr__(self):
-        return "{}".format(self.sql)
-        
-
+        def __repr__(self):
+            return '\n'.join(str(x) for x in self.tobjects)
         
