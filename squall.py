@@ -419,11 +419,7 @@ class Fields(Sql):
         '''
         # A Wildcard eliminates the need for any additional fields
         self.distinct = kwargs.get('distinct', [])
-        if isinstance(self.distinct, str):
-            self.distinct = [self.distinct]
-        else:
-            raise InvalidDistinctFieldFormat('Unique or Distinct Field is invalid: {}'.format(
-                                            str(self.distinct)))
+        self.__reload_distinction__()
         if len(args) == 0:
             args = '' # Empty, so INSERT statements don't fail, need empty string
         elif '*' in args:
@@ -434,10 +430,34 @@ class Fields(Sql):
                         'Field Value is neither a wildcard char nor a list or tuple')
         self.fields = args
         
+    def __reload_distinction__(self):
+        if self.distinct:
+            if isinstance(self.distinct, str):
+                self.distinct = [self.distinct]
+            elif isinstance(self.distinct, list):
+                pass
+            else:
+                raise InvalidDistinctFieldFormat('Unique or Distinct Field is invalid: {}'.format(
+                                                str(self.distinct)))
                 
     def __repr__(self):
-        distinctfields = ', '.join(self.distinct)
-        return ', '.join(self.fields)
+        self.__reload_distinction__()
+        nondistinctfields = []
+        if self.distinct:
+            for f in self.fields:
+                if not f in self.distinct:
+                    nondistinctfields.append(f)
+        # Separate distinct from non-distinct field parameters
+        if len(nondistinctfields) > 0:
+            return '{}{}'.format('DISTINCT ({}), '.format(', '.join(self.distinct)),
+                                 ', '.join(nondistinctfields))
+        else:
+            if len(self.distinct) > 0:
+                return 'DISTINCT ({})'.format(', '.join(self.fields))
+            # Returning fields only
+            return '{}'.format(', '.join(self.fields))
+        
+        
 
 class Order(Condition):
     '''
