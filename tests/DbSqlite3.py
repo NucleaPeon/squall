@@ -85,7 +85,6 @@ class Test(unittest.TestCase):
         self.driver.Transaction(self.driver.Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), 
                                                Where('x', '=', Value(1)))).run()
-
          
     def testSelectReturn(self):
         print("Testing return value of Select")
@@ -101,6 +100,9 @@ class Test(unittest.TestCase):
         
     def testSqlAdapterDriver(self):
         assert not self.driver is None, 'SqlAdapter driver is None'
+        
+    def testConditions(self):
+        pass
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

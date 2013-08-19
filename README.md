@@ -6,6 +6,10 @@ Database Adapter for multiple sql vendors, one command fits all.
 Some functionality of the RDBMS may be squelched for massive
 compatibility of all relational databases.
 
+As with most object-oriented platforms, you can expect to see a 
+slight performance hit in exchange for the additional functionality
+and ease of use.
+
 Recent Activity
 ====
 
@@ -67,3 +71,16 @@ driver = squallsql.SqlAdapter(driver='squallsqlite3',
 
 ( driver will automatically attempt a connection )
  
+Notes on Value objects
+----------
+It is important to note that when filling out (for example) a Where() object,
+if you do not put the value into a Value() object, you will not get quotes on the
+object.
+
+```
+# WRONG
+w = Where('field', '=', someIdentifier)
+
+# RIGHT
+w = Where('field', '=', Value(someIdentifier))
+```

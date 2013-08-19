@@ -437,10 +437,16 @@ class Order(Condition):
                 - 'sort' : string 'ASC' or 'DESC', case insensitive
                 - 'nocase' : boolean
         '''
-        self.fields = kwargs.get('fields', None)
-        self.collate = kwargs.get('collate', False)
-        self.sort = kwargs.get('sort', None)
-        self.nocase = kwargs.get('nocase', False)
+        self.fields = kwargs.get('fields', '')
+        self.collate = kwargs.get('collate', '')
+        self.sort = kwargs.get('sort', '') # ASC is default
+        self.nocase = kwargs.get('nocase', '')
+
+    def __repr__(self):
+        return "ORDER BY {}{}{}{}".format(self.fields, self.collate, self.nocase,
+                                          self.sort)
+
+
 
 class Verbatim(Sql):
     '''
