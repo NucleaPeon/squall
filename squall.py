@@ -409,8 +409,21 @@ class Fields(Sql):
         of values
     '''
     
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
+        '''
+        :Parameters:
+            - *args: list[string]; name of columns/fields
+            - **kwargs: dict;
+                - 'distinct': list[string] field names
+                  Example: Fields('x', distinct=['x']) == SELECT DISTINCT x FROM tabl
+        '''
         # A Wildcard eliminates the need for any additional fields
+        self.distinct = kwargs.get('distinct', [])
+        if isinstance(self.distinct, str):
+            self.distinct = [self.distinct]
+        else:
+            raise InvalidDistinctFieldFormat('Unique or Distinct Field is invalid: {}'.format(
+                                            str(self.distinct)))
         if len(args) == 0:
             args = '' # Empty, so INSERT statements don't fail, need empty string
         elif '*' in args:
@@ -418,10 +431,12 @@ class Fields(Sql):
         else:
             if not type(args) in [list, tuple]:
                 raise InvalidSqlValueException(
-                        'Value is neither a wildcard char nor a list or tuple')
+                        'Field Value is neither a wildcard char nor a list or tuple')
         self.fields = args
+        
                 
     def __repr__(self):
+        distinctfields = ', '.join(self.distinct)
         return ', '.join(self.fields)
 
 class Order(Condition):
@@ -533,5 +548,9 @@ class InvalidSquallObjectException(AdapterException):
         AdapterException.__init__(self, message)
         
 class InvalidDatabaseNameException(AdapterException):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
+        
+class InvalidDistinctFieldFormat(AdapterException):
     def __init__(self, message):
         AdapterException.__init__(self, message)
