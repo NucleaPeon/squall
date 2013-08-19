@@ -60,5 +60,11 @@ class SqlAdapter(object):
     def rollback(self, *args, **kwargs):
         return self.sqladapter.rollback()
     
+    #DEPRECATED
+    def verbatim(self, sql, params=()):
+        return self.sqladapter.sql_compat(sql, params)
+    
     def Transaction(self, *args, **kwargs):
         return self.sqladapter.Transaction(*args, **kwargs)
+    
+    

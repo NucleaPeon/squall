@@ -422,6 +422,26 @@ class Fields(Sql):
     def __repr__(self):
         return ', '.join(self.fields)
 
+class Order(Condition):
+    '''
+    :Description:
+        Add a condition to organize rows. Only applicable on Select objects.
+    '''
+    
+    def __init__(self, *args, **kwargs):
+        '''
+        :Parameters:
+            - **kwargs: dict; 
+                - 'fields' : Field object
+                - 'collate' : boolean
+                - 'sort' : string 'ASC' or 'DESC', case insensitive
+                - 'nocase' : boolean
+        '''
+        self.fields = kwargs.get('fields', None)
+        self.collate = kwargs.get('collate', False)
+        self.sort = kwargs.get('sort', None)
+        self.nocase = kwargs.get('nocase', False)
+
 class Verbatim(Sql):
     '''
     :Description:
