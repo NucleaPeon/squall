@@ -281,9 +281,9 @@ class Where(Condition):
             - value: string; can be an Sql object IF AND ONLY IF
               command == 'SELECT', otherwise expects a string
               representation. 
-            - conditions: tuple; Either: 
-                - A list of strings, which are joined to create one string
-                - A list of Where or Select objects, where the representation of each
+            - conditions: list; Either: 
+                - A list of strings or
+                - A list of Condition and/or Select objects, where the representation of each
                   additional object is prepended with an "AND" keyword
                 (Where('x', '=', '5'), Where('y', '=', '7')) would equal:
                 WHERE x = 5 AND y = 7
@@ -294,6 +294,7 @@ class Where(Condition):
         '''
         super().__init__()
         self.field = field
+        self.conditions = []
         if not isinstance(operator, str):
             raise InvalidSqlConditionException('Operator not valid: {}'.format(operator))
         self.operator = operator
@@ -311,21 +312,23 @@ class Where(Condition):
             raise InvalidSqlWhereClauseException(
                         'Invalid WHERE Value {}'.format(value))
         
-        if len(conditions) > 0:
-            if isinstance(conditions[0], str):
-                self.conditions = ' '.join(conditions)
-            else:
-                if len(conditions) > 0:  
-                    self.conditions = ' '.join(
-                                str(cond) for cond in conditions).replace("WHERE", "AND")
-                else:
-                    self.conditions = '' 
+        if isinstance(conditions, list):
+            self.conditions.extend(conditions)
+        elif isinstance(conditions, Condition):
+            self.conditions.append(conditions)
+        elif isinstance(conditions, str):
+            self.conditions.append(str)
         else:
-            self.conditions = ''
+            raise InvalidSqlConditionException('Invalid parameter {}'.format(str(conditions)))
+        
+    def __eq__(self, other):
+        return str(self) == str(other)
         
     def __repr__(self):
+        conditions = '{}'.format(' '.join(
+            str(cond) for cond in self.conditions).replace("WHERE", "AND"))
         return "WHERE {} {} {} {}".format(self.field, self.operator,
-                                          self.value, self.conditions)
+                                          self.value, conditions).strip()
         
 class Exists(Condition):
     '''
@@ -379,12 +382,11 @@ class Value(Sql):
     '''
     def __init__(self, value): 
         self.value = value
-        self.type = type(value)
         
     def __repr__(self):
-        if self.type == int:
+        if isinstance(self.value, int):
             return str(self.value)
-        elif self.type == str:
+        elif isinstance(self.value, str):
             return "'{}'".format(str(self.value))
         return "{}: {}".format(self.value, self.type)
     
@@ -439,12 +441,29 @@ class Order(Condition):
         '''
         self.fields = kwargs.get('fields', '')
         self.collate = kwargs.get('collate', '')
-        self.sort = kwargs.get('sort', '') # ASC is default
         self.nocase = kwargs.get('nocase', '')
+        self.sort = kwargs.get('sort', '')
+        self.args = args
+
+    def __eq__(self, other):
+        return str(self) == str(other) 
 
     def __repr__(self):
-        return "ORDER BY {}{}{}{}".format(self.fields, self.collate, self.nocase,
-                                          self.sort)
+        # To prevent massive misunderstandings of the Order object, 
+        # allow arguments to contain strings that get ordered for ease of use.
+        
+        def space(string):
+            if string:
+                return ' {}'.format(string)
+            return ''
+        
+        if self.args:
+            
+            self.fields = '{}{}'.format(self.fields, Fields(', '.join(self.args)))
+        return "ORDER BY{}{}{}{}".format(space(self.fields), 
+                                          space(self.collate), 
+                                          space(self.nocase),
+                                          space(self.sort))
 
 
 
