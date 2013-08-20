@@ -22,8 +22,14 @@ class Test(unittest.TestCase):
     def testSingleCondition(self):
         assert self.where == "WHERE x = {}".format(Value(self.y)), 'Failed to properly parse where single clause'
         
+    def testWhereAndOr(self):
+        newwhere = Where('x', '=', Value(5), operand='OR', conditions=[Where('y', '>', 'x')])
+        assert newwhere == 'WHERE x = 5 OR y > x', 'Where OR failed'
+        newwhere.operand = 'AND'
+        assert newwhere == 'WHERE x = 5 AND y > x', 'Where AND failed'
+        
     def testWhereAndOrder(self):
-        self.where = Where('x', '=', Value(self.y), Order(fields=Fields('x'), sort='ASC'))
+        self.where = Where('x', '=', Value(self.y), conditions=Order(fields=Fields('x'), sort='ASC'))
         
     def testTwoWhereConditions(self):
         # Where('x', '=', '5'), Where('y', '=', '7')

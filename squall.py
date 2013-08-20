@@ -125,8 +125,32 @@ class Command(Squall):
         return self.command
             
 class Condition(Squall):
-    def __init__(self, conditions = []):
+    def __init__(self, field, operator, value):
         super().__init__()
+        self.field = field
+        self.operator = operator
+        
+        if isinstance(value, Sql) or isinstance(value, Value):
+            if isinstance(value, Value):
+                self.value = str(value)
+            elif not value.command == "SELECT":
+                raise InvalidSqlWhereClauseException(
+                    'Non-Queries not allowed in WHERE Clause') 
+            else:
+                self.value = "({})".format(str(value))
+        elif isinstance(value, str):
+            self.value = value
+        else:
+            raise InvalidSqlWhereClauseException(
+                        'Invalid Condition Value {}'.format(value))
+        
+    def __eq__(self, other):
+        return str(self) == str(other)
+        
+    def __repr__(self):
+        return "{} {} {}".format(self.field,
+                                 self.operator,
+                                 self.value).strip()
 
 class Drop(Sql):
     
@@ -251,7 +275,7 @@ class Update(Sql):
      
 class Where(Condition):
     
-    def __init__(self, field, operator, value, conditions=[]):
+    def __init__(self, field, operator, value, **kwargs):
         '''
         :Description:
             This is the main condition that gets used.
@@ -290,45 +314,83 @@ class Where(Condition):
                 If a substring was placed into the condition, it could look like this:
                 (Where('x', '=', '5'), Select('t', 'y', Where('y', '=', '7')))
                 >> WHERE x = 5 AND (SELECT y FROM t WHERE y = 7)
+            - **kwargs: dict;
+                - conditions: list; list of Condition objects to append to Where clause
+                - operand: 'AND' or 'OR', when multiple conditions are given, they are
+                  separated by this operand string. Applies to additional Where objects only
                 
         '''
-        super().__init__()
-        self.field = field
-        self.conditions = []
+        super().__init__(field, operator, value)
+        self.operand = kwargs.get('operand', 'AND')
+        self.conditions = kwargs.get('conditions', [])
         if not isinstance(operator, str):
             raise InvalidSqlConditionException('Operator not valid: {}'.format(operator))
-        self.operator = operator
-        if isinstance(value, Sql) or isinstance(value, Value):
-            if isinstance(value, Value):
-                self.value = str(value)
-            elif not value.command == "SELECT":
-                raise InvalidSqlWhereClauseException(
-                    'Non-Queries not allowed in WHERE Clause') 
-            else:
-                self.value = "({})".format(str(value))
-        elif isinstance(value, str):
-            self.value = value
-        else:
-            raise InvalidSqlWhereClauseException(
-                        'Invalid WHERE Value {}'.format(value))
+
         
-        if isinstance(conditions, list):
-            self.conditions.extend(conditions)
-        elif isinstance(conditions, Condition):
-            self.conditions.append(conditions)
-        elif isinstance(conditions, str):
-            self.conditions.append(str)
-        else:
-            raise InvalidSqlConditionException('Invalid parameter {}'.format(str(conditions)))
+        if not isinstance(self.conditions, list) and \
+           not isinstance(self.conditions, str) and \
+           not isinstance(self.conditions, Condition):
+            raise InvalidSqlConditionException('Invalid parameter {}'.format(str(self.conditions)))
         
-    def __eq__(self, other):
-        return str(self) == str(other)
+        if not isinstance(self.conditions, list):
+            self.conditions = [self.conditions]
+    
+    def condition(self):
+        '''
+        :Description:
+            Returns the Where values (except the optional conditional additions) 
+            in a Condition() object.
+        '''
+        return Condition(self.field, self.operator, self.value)
         
     def __repr__(self):
         conditions = '{}'.format(' '.join(
-            str(cond) for cond in self.conditions).replace("WHERE", "AND"))
+            str(cond) for cond in self.conditions).replace("WHERE", self.operand))
         return "WHERE {} {} {} {}".format(self.field, self.operator,
                                           self.value, conditions).strip()
+        
+class Order(Condition):
+    '''
+    :Description:
+        Add a condition to organize rows. Only applicable on Select objects.
+    '''
+    
+    def __init__(self, *args, **kwargs):
+        '''
+        :Parameters:
+            - **kwargs: dict; 
+                - 'fields' : Field object
+                - 'collate' : boolean
+                - 'sort' : string 'ASC' or 'DESC', case insensitive
+                - 'nocase' : boolean
+        '''
+        super().__init__(kwargs.get('fields', ''),
+                         '', '')
+        self.fields = kwargs.get('fields', '')
+        self.collate = kwargs.get('collate', '')
+        self.nocase = kwargs.get('nocase', '')
+        self.sort = kwargs.get('sort', '')
+        self.args = args
+
+    def __eq__(self, other):
+        return str(self) == str(other) 
+
+    def __repr__(self):
+        # To prevent massive misunderstandings of the Order object, 
+        # allow arguments to contain strings that get ordered for ease of use.
+        
+        def space(string):
+            if string:
+                return ' {}'.format(string)
+            return ''
+        
+        if self.args:
+            
+            self.fields = '{}{}'.format(self.fields, Fields(', '.join(self.args)))
+        return "ORDER BY{}{}{}{}".format(space(self.fields), 
+                                          space(self.collate), 
+                                          space(self.nocase),
+                                          space(self.sort))
         
 class Exists(Condition):
     '''
@@ -338,7 +400,7 @@ class Exists(Condition):
     '''
     
     def __init__(self, exists=True, conditions = []):
-        super().__init__()
+        super().__init__('', '', '')
         self.exists = exists
         if len(conditions) > 0:
             if isinstance(conditions[0], str): # String list:
@@ -456,49 +518,8 @@ class Fields(Sql):
                 return 'DISTINCT ({})'.format(', '.join(self.fields))
             # Returning fields only
             return '{}'.format(', '.join(self.fields))
-        
-        
 
-class Order(Condition):
-    '''
-    :Description:
-        Add a condition to organize rows. Only applicable on Select objects.
-    '''
-    
-    def __init__(self, *args, **kwargs):
-        '''
-        :Parameters:
-            - **kwargs: dict; 
-                - 'fields' : Field object
-                - 'collate' : boolean
-                - 'sort' : string 'ASC' or 'DESC', case insensitive
-                - 'nocase' : boolean
-        '''
-        self.fields = kwargs.get('fields', '')
-        self.collate = kwargs.get('collate', '')
-        self.nocase = kwargs.get('nocase', '')
-        self.sort = kwargs.get('sort', '')
-        self.args = args
 
-    def __eq__(self, other):
-        return str(self) == str(other) 
-
-    def __repr__(self):
-        # To prevent massive misunderstandings of the Order object, 
-        # allow arguments to contain strings that get ordered for ease of use.
-        
-        def space(string):
-            if string:
-                return ' {}'.format(string)
-            return ''
-        
-        if self.args:
-            
-            self.fields = '{}{}'.format(self.fields, Fields(', '.join(self.args)))
-        return "ORDER BY{}{}{}{}".format(space(self.fields), 
-                                          space(self.collate), 
-                                          space(self.nocase),
-                                          space(self.sort))
 
 class Group(Sql):
     '''
@@ -506,10 +527,22 @@ class Group(Sql):
         Organises fields in Select statements based on input parameters
     '''
     def __init__(self, *args, **kwargs):
+        '''
+        :Parameters:
+            - *args: list[string]; field / column names
+        '''
         self.fields = args
+        self.having = kwargs.get('having')
         
     def __repr__(self):
         return 'GROUP BY {}'.format(', '.join(self.fields))
+    
+
+class Having(Where):
+    
+    def __init__(self, field, operator, value, conditions=[]):
+        '''
+        '''
     
 
 class Verbatim(Sql):
