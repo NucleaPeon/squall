@@ -540,10 +540,20 @@ class Group(Sql):
 
 class Having(Where):
     
-    def __init__(self, field, operator, value, conditions=[]):
+    def __init__(self, field, operator, value, **kwargs):
         '''
+        :Description:
+            This is the equivalent of a Where clause applied to 
+            a group object.
+            
         '''
-    
+        super().__init__(field, operator, value, **kwargs)
+        
+    def __repr__(self):
+        conditions = '{}'.format(' '.join(
+            str(cond) for cond in self.conditions).replace("WHERE", self.operand))
+        return "HAVING {} {} {} {}".format(self.field, self.operator,
+                                          self.value, conditions).strip()
 
 class Verbatim(Sql):
     '''
