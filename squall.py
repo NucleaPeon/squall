@@ -500,7 +500,17 @@ class Order(Condition):
                                           space(self.nocase),
                                           space(self.sort))
 
-
+class Group(Sql):
+    '''
+    :Description:
+        Organises fields in Select statements based on input parameters
+    '''
+    def __init__(self, *args, **kwargs):
+        self.fields = args
+        
+    def __repr__(self):
+        return 'GROUP BY {}'.format(', '.join(self.fields))
+    
 
 class Verbatim(Sql):
     '''
