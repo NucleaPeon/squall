@@ -125,19 +125,20 @@ class Command(Squall):
         return self.command
             
 class Condition(Squall):
+    
     def __init__(self, field, operator, value):
         super().__init__()
         self.field = field
         self.operator = operator
         
-        if isinstance(value, Sql) or isinstance(value, Value):
-            if isinstance(value, Value):
+        if isinstance(value, Sql):
+            if isinstance(value, Select):
+                self.value = "({})".format(str(value))
+            elif isinstance(value, Value):
                 self.value = str(value)
-            elif not value.command == "SELECT":
+            else:
                 raise InvalidSqlWhereClauseException(
                     'Non-Queries not allowed in WHERE Clause') 
-            else:
-                self.value = "({})".format(str(value))
         elif isinstance(value, str):
             self.value = value
         else:
@@ -177,6 +178,16 @@ class Create(Sql):
                                             ', '.join(self.fields),
                                             ', '.join(self.constraints))
     
+
+class Union(Sql):
+    
+    def __init__(self, *args, **kwargs):
+        '''
+        :Description:
+            Concats 
+        '''
+        
+        
 
 class Select(Sql):
     

@@ -10,8 +10,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-import squall
-from squallsql import Table, Fields, Value, Transaction, Where
+from squall import Table, Fields, Value, Transaction, Where
 import squallserver as tsql
 
 class Test(unittest.TestCase):

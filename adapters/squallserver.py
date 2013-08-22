@@ -26,7 +26,7 @@ sys.path.append(os.path.join('..'))
 
 import squall, squallsql
 
-class SqlAdapter(squallsql.Squall):
+class SqlAdapter(object):
     '''
     API for calling odbc (sql server)
     
