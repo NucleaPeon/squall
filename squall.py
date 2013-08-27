@@ -191,7 +191,7 @@ class Union(Sql):
 
 class Select(Sql):
     
-    def __init__(self, table, fields, condition=[], **kwargs):
+    def __init__(self, table, fields, condition='', **kwargs):
         '''
         :Description:
         :Parameters:
