@@ -4,7 +4,7 @@ Created on 2013-08-20
 @author: radlab
 '''
 import unittest
-from squall import Condition, Value, Where, Exists, Order, Fields, Having
+from squall import Condition, Value, Where, Exists, Order, Fields, Having, WhereIn
 
 class Test(unittest.TestCase):
 
@@ -41,6 +41,13 @@ class Test(unittest.TestCase):
         assert isinstance(having, Condition), 'Having is not a condition'
         self.assertEqual(str(having), 'HAVING x >= 5', 'Having does not match expected value')
 
+    def testWhereIn(self, ids = ['1d619a81-8b86-401f-9c39-46c2942a939d',
+                                 '3edbe095-d6b1-41b5-93b0-4d4f1d4ed4e0',
+                                 'b8d1de9d-1473-4ebf-a032-5399f0763cd7',
+                                 '5d86e2f8-2f35-457c-a027-76a9b101928f',
+                                 '7fe6a51c-7133-4b84-b9da-978c864601f8']):
+        condition = WhereIn(Fields('DocumentDefinitionId'), ids)
+        print(str(condition))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -360,6 +360,36 @@ class Where(Condition):
         return "WHERE {} {} {} {}".format(self.field, self.operator,
                                           self.value, conditions).strip()
         
+class WhereIn(Where):
+    '''
+    :Description:
+        WhereIn is a child object of Where that configures the Condition
+        to specify multiple values in Sql-Acceptable formats.
+        It makes specifying a list of values much easier.
+    '''
+    
+    def __init__(self, field, values):
+        super().__init__(self, field, 'IN', self.formatValues(values))
+        
+    def formatValues(self, values):
+        newlist = []
+        if isinstance(values, str):
+            newlist = [values]
+        else:
+            if  isinstance(values, list) or \
+                isinstance(values, tuple):
+                if len(values) == 0:
+                    raise InvalidSqlConditionException('Cannot create condition without values')
+                newlist = values
+            elif isinstance(values, dict):
+                newlist = values.items()
+            else:
+                raise InvalidSqlConditionException(
+                        'WhereIn only accepts string/list/tuple or dict objects')
+        for v in values:
+            newlist.append(Value(v))
+        return "{}".format(tuple(newlist))
+        
 class Order(Condition):
     '''
     :Description:
