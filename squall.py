@@ -369,25 +369,27 @@ class WhereIn(Where):
     '''
     
     def __init__(self, field, values):
-        super().__init__(self, field, 'IN', self.formatValues(values))
+        super().__init__(field, 'IN', self.formatValues(values))
         
     def formatValues(self, values):
         newlist = []
+        print(type(values))
         if isinstance(values, str):
-            newlist = [values]
+            values = [values]
         else:
             if  isinstance(values, list) or \
                 isinstance(values, tuple):
+                print("Is list or tuple")
                 if len(values) == 0:
                     raise InvalidSqlConditionException('Cannot create condition without values')
-                newlist = values
             elif isinstance(values, dict):
-                newlist = values.items()
+                values = values.items()
             else:
                 raise InvalidSqlConditionException(
                         'WhereIn only accepts string/list/tuple or dict objects')
         for v in values:
             newlist.append(Value(v))
+            
         return "{}".format(tuple(newlist))
         
 class Order(Condition):
