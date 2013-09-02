@@ -373,13 +373,11 @@ class WhereIn(Where):
         
     def formatValues(self, values):
         newlist = []
-        print(type(values))
         if isinstance(values, str):
             values = [values]
         else:
             if  isinstance(values, list) or \
                 isinstance(values, tuple):
-                print("Is list or tuple")
                 if len(values) == 0:
                     raise InvalidSqlConditionException('Cannot create condition without values')
             elif isinstance(values, dict):
