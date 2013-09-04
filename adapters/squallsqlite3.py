@@ -213,7 +213,6 @@ class SqlAdapter(object):
                         str(tobj)))
                 
             for squallobj in self.tobjects:
-                print(squallobj)
                 if isinstance(squallobj, squall.Select):
                     self.output[str(squallobj)] = self.adapter.sql_compat(str(squallobj))
                 else:
