@@ -130,7 +130,6 @@ class Condition(Squall):
         super().__init__()
         self.field = field
         self.operator = operator
-        
         if isinstance(value, Sql):
             if isinstance(value, Select):
                 self.value = "({})".format(str(value))
@@ -372,23 +371,12 @@ class WhereIn(Where):
         super().__init__(field, 'IN', self.formatValues(values))
         
     def formatValues(self, values):
-        newlist = []
-        if isinstance(values, str):
-            values = [values]
-        else:
-            if  isinstance(values, list) or \
-                isinstance(values, tuple):
-                if len(values) == 0:
-                    raise InvalidSqlConditionException('Cannot create condition without values')
-            elif isinstance(values, dict):
-                values = values.items()
-            else:
-                raise InvalidSqlConditionException(
-                        'WhereIn only accepts string/list/tuple or dict objects')
-        for v in values:
-            newlist.append(Value(v))
-            
-        return "{}".format(tuple(newlist))
+        if isinstance(values, Value):
+            return "{}".format(tuple(values.value))
+        elif isinstance(values, list) or isinstance(values, tuple):
+            if len(values) == 1:
+                return "({})".format(Value(values[0]))
+            return "{}".format(tuple(values))
         
 class Order(Condition):
     '''
@@ -489,9 +477,11 @@ class Value(Sql):
     def __repr__(self):
         if isinstance(self.value, int):
             return str(self.value)
+        elif isinstance(self.value, list) or isinstance(self.value, tuple):
+            return ',  '.join(self.value)
         elif isinstance(self.value, str):
             return "'{}'".format(str(self.value))
-        return "{}: {}".format(self.value, self.type)
+        return "{}: {}".format(self.value, type(self.value))
     
 class Table(Sql):
     '''
