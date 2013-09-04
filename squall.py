@@ -17,6 +17,8 @@ ADAPTERS = {'sqlite3' : None,
             'postgres': None,
             'firebird': None}
 
+import datetime as dt
+
 class Squall():
     '''
     :Description:
@@ -239,11 +241,16 @@ class Insert(Sql):
                                 ', '.join(str(x) for x in self.values))
     
 class Delete(Sql):
-    def __init__(self, table, condition=None, **kwargs):
-        super().__init__('DELETE', table=table, condition=condition)
+    def __init__(self, table, **kwargs):
+        '''
+        :Parameters:
+            - **kwargs; dict
+                - condition; Where object
+        '''
+        super().__init__('DELETE', table, condition=kwargs.get('condition'))
         self.table = table
-        if isinstance(condition, Where):
-            self.condition = condition
+        if isinstance(kwargs.get('condition'), Where):
+            self.condition = kwargs.get('condition')
         else:
             self.condition = ''
         
@@ -471,17 +478,55 @@ class Value(Sql):
         
         where '2004-01-01 02:34:56' is the output of a str(datetime) object type
     '''
-    def __init__(self, value): 
-        self.value = value
+    def __init__(self, *args, **kwargs):
+        '''
+        :Parameters:
+            - **kwargs; dict:
+                - sanitize; bool: Convert quotes into unicode glyphs. Works on single quotes
+        '''
+        if len(args) < 1:
+            raise InvalidSqlValueException('Non-existant values in initialization')
+        else:
+            self.value = args
+        wastuple = False
+        if isinstance(self.value, tuple):
+            self.value = list(self.value)
+            wastuple = True
+            
+        if kwargs.get('sanitize_quotes', False):
+            for i in range(len(self.value)):
+                if isinstance(self.value[i], str):
+                    self.value[i] = self.value[i].replace("'", "U+0027")
+        if wastuple:
+            self.value = tuple(self.value)
+            # We want to keep tuple format, but it cannot be changed unless it's
+            # a list. We reconvert it here after any modifications are possible
+        
         
     def __repr__(self):
-        if isinstance(self.value, int):
-            return str(self.value)
-        elif isinstance(self.value, list) or isinstance(self.value, tuple):
-            return ',  '.join(self.value)
-        elif isinstance(self.value, str):
-            return "'{}'".format(str(self.value))
-        return "{}: {}".format(self.value, type(self.value))
+        if isinstance(self.value, tuple) or isinstance(self.value, list):
+            if len(self.value) == 1:
+                value = self.value[0]
+                if isinstance(value, dt.datetime):
+                    return "DATE('{}')".format(value.strftime("%Y-%M-%D %H-%m-%S"))
+                elif isinstance(value, str):
+                    return "'{}'".format(value)
+                return "{}".format(value)
+        if isinstance(self.value, dt.datetime):
+            return "'{}'".format(self.value.strftime("%Y-%M-%D %H-%m-%S"))
+        return str(self.value) # FIXME
+#         if isinstance(self.value, int):
+#             return str(self.value)
+#         elif isinstance(self.value, list):
+#             return ', '.join(self.value)
+#         elif isinstance(self.value, tuple):
+#             if len(self.value) == 1:
+#                 self.value = "({})".format(self.value[0])
+#             else:
+#                 return ', '.join(str(self.value))
+#         elif isinstance(self.value, str):
+#             return "'{}'".format(self.value)
+#         return "{}: {}".format(self.value, type(self.value))
     
 class Table(Sql):
     '''
