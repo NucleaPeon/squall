@@ -100,7 +100,7 @@ class SqlAdapter(object):
         :Description:
             Explicitly invoke a rollback exception for sqlite3
         '''
-        raise sqlite3.IntegrityError()
+        raise squall.RollbackException('rollback() method invoked')
     
 
         
@@ -205,6 +205,13 @@ class SqlAdapter(object):
                 - None if rollback occured and transaction failed,
                 - list if successful commit, list contains all transaction objects
             '''
+            #Handle force cases first
+            if kwargs.get('force') == 'rollback':
+                self.clear()
+                self.adapter.rollback()
+            elif kwargs.get('force') == 'commit':
+                self.adapter.commit()
+                
             if len(self.tobjects) == 0:
                 raise EmptyTransactionException('No objects to execute')
             for tobj in self.tobjects:
@@ -219,10 +226,8 @@ class SqlAdapter(object):
                     self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
                 # via sqlite3, so we don't have to check for this. Other db's will have
                 # to reimplement this.
-            if kwargs.get('force') == 'rollback':
-                self.adapter.rollback()
-            else:
-                self.adapter.commit()
+            self.adapter.commit()
+            
             if not kwargs.get('raise_exception') is None:
                 raise CommitException('Committed Transaction')
             return self.clear()

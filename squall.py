@@ -703,3 +703,7 @@ class InvalidDatabaseNameException(AdapterException):
 class InvalidDistinctFieldFormat(AdapterException):
     def __init__(self, message):
         AdapterException.__init__(self, message)
+        
+class NotImplementedException(AdapterException):
+    def __init__(self, message):
+        AdapterException.__init__(self, message)
