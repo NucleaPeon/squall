@@ -384,6 +384,8 @@ class WhereIn(Where):
             if len(values) == 1:
                 return "({})".format(Value(values[0]))
             return "{}".format(tuple(values))
+        elif isinstance(values, Select):
+            return "({})".format(str(values)) # Returns sql query
         
 class Order(Condition):
     '''
