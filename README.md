@@ -83,4 +83,12 @@ w = Where('field', '=', someIdentifier)
 
 # RIGHT
 w = Where('field', '=', Value(someIdentifier))
+
+# ALSO RIGHT
+w = Where(Fields('field'), '=', Value(someIdentifier))
+
+# Another Variation
+# Where ___ IN ___ sql statements require the values to be formatted in () brackets 
+# and with comments, so WhereIn is an easy-to-use shortcut to do those Where comparisons
+w = WhereIn(Fields('Id'), ['a', 'b', 'c', 'd', 'e']) # Can be python-native list
 ```
