@@ -42,6 +42,7 @@ Functionality that must be sustained:
 * DELETE
 * DROP
 * CREATE
+* WHERE
 
 This software aims to be a solid single-threaded application first and 
 foremost. Multi-threading can be implemented at a later date.
@@ -49,7 +50,7 @@ foremost. Multi-threading can be implemented at a later date.
 How to use this software
 ----
 
-Sql Server
+Sql Server (Currently Under Construction)
 ---------
 ```
 import squall
@@ -64,9 +65,9 @@ OR
 Sqlite3 
 ---------
 ```
-import squallsql
-driver = squallsql.SqlAdapter(driver='squallsqlite3', 
-                                  database='rfid.db')
+import squall.squallsql
+driver = squall.squallsql.SqlAdapter(driver='squallsqlite3', 
+                                  database='/path/to/database.db')
 ```
 
 ( driver will automatically attempt a connection )
