@@ -80,7 +80,7 @@ class Test(unittest.TestCase):
         ids = ('1d619a81-8b86-401f-9c39-46c2942a939d',
                '3edbe095-d6b1-41b5-93b0-4d4f1d4ed4e0',)
         
-        v = Value(ids)
+        v = Value(ids) # FIXME: Error will occur if a Value() object is used
         condition = WhereIn(Fields('DocumentDefinitionId'), v)
         print(str(condition))
 
