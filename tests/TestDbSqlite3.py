@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
 from squall import *
-import squallsql, sqlite3
+import squallsql
 
 class Test(unittest.TestCase):
     
@@ -102,7 +102,11 @@ class Test(unittest.TestCase):
         
     def testConditions(self):
         pass
+    
+    def testEnviron(self):
+        print(os.environ['PYTHONPATH'])
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
+    
