@@ -45,7 +45,6 @@ class Test(unittest.TestCase):
         assert not self.driver.sqladapter.cursor is None, 'Cursor not initialized'
         
     def testInsertDeleteUpdate(self):
-        print("testInsertDeleteUpdate")
         trans = self.driver.Transaction()
         self.sqlselect = Select(Table('t'), Fields('*'), condition=Where('x', '=', Value(1)))
         assert not self.sqlselect is None, 'Select() object not initialized'
@@ -64,13 +63,11 @@ class Test(unittest.TestCase):
         trans.run()
          
     def testSqliteInsert(self):
-        print("Test: Sqlite3 Insert")
         self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
         self.assertEqual(str(self.sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
         # TODO: Add non-committed insert, attempt select on it (expect fail), then insert and select (success)
           
     def testSqliteDelete(self):
-        print("testSqliteDelete")
         trans = self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
                                         Delete(Table('t'), condition=Where('x', '=', Value(1))))
         trans2 = self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
@@ -79,21 +76,17 @@ class Test(unittest.TestCase):
         self.assertRaises(RollbackException, trans2.run, force='rollback')
           
     def testSqliteUpdate(self):
-        print("testSqliteUpdate")
         self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
         self.driver.Transaction(Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), 
                                                Where('x', '=', Value(1)))).run()
          
     def testSelectReturn(self):
-        print("testSelectReturn")
         t = self.driver.Transaction(self.driver.Insert(
                 Table('t'), Fields(), [Value(1), Value(2), Value(3)]))
         sqlselect = Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
         t.add(sqlselect)
-        print(str(sqlselect))
         output = t.run()
-        print(str(output))
         assert isinstance(output[str(sqlselect)], list), 'Expected a list, got {}'.format(str(output))
         assert isinstance(output[str(sqlselect)][0], tuple), 'Expected tuple as a result, got {}'.format(type(output[0]))
         
@@ -102,9 +95,6 @@ class Test(unittest.TestCase):
         
     def testConditions(self):
         pass
-    
-    def testEnviron(self):
-        print(os.environ['PYTHONPATH'])
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

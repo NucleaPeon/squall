@@ -3,7 +3,10 @@ SquallSql is the python module that contains basic Sql objects that get
 converted into SQL syntactical strings yet can be manipulated as an
 object. Does not include database specific code.
 '''
-import squall
+import squall, sys, os
+
+sys.path.append(os.path.join(os.getcwd(), 'adapters'))
+
 class SqlAdapter(object):
     '''
     :Description:
@@ -27,11 +30,10 @@ class SqlAdapter(object):
         '''
         super().__init__()
         import importlib
-        self.module = importlib.import_module(kwargs.get('driver', None))
+        self.module = importlib.import_module(kwargs.get('driver'), '')
         if self.module is None:
             raise squall.AdapterException()
         self.sqladapter = self.module.SqlAdapter(*args, **kwargs)
-        self.Connect(*args, **kwargs)
         
     def Connect(self, *args, **kwargs):
         return self.sqladapter.connect(*args, **kwargs)
@@ -54,17 +56,17 @@ class SqlAdapter(object):
     def sql(self, *args, **kwargs):
         return self.sqladapter.sql(*args, **kwargs)
     
-    def commit(self, *args, **kwargs):
+    def Commit(self, *args, **kwargs):
         return self.sqladapter.commit()
     
-    def rollback(self, *args, **kwargs):
+    def Rollback(self, *args, **kwargs):
         return self.sqladapter.rollback()
     
     #DEPRECATED
-    def verbatim(self, sql, params=()):
+    def Verbatim(self, sql, params=()):
         return self.sqladapter.sql_compat(sql, params)
     
     def Transaction(self, *args, **kwargs):
-        return self.sqladapter.Transaction(*args, **kwargs)
+        return self.sqladapter.transaction(*args, **kwargs)
     
     

@@ -19,6 +19,7 @@ Basic Overview:
 
 import sys, sqlite3
 from squall import *
+sys.path.append('..')
 
 class SqlAdapter(object):
     '''
@@ -53,7 +54,7 @@ class SqlAdapter(object):
             raise InvalidDatabaseNameException(
                 'Did not find database name parameter with SqlAdapter init')
         if not kwargs.get('host') is None:
-            db_host = kwargs.get('host')
+            db_host = kwargs.get('host', db_host)
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
@@ -102,7 +103,7 @@ class SqlAdapter(object):
     
 
         
-    class Transaction(Sql):
+    class transaction(Sql):
         '''
         :Description:
             Transaction object that takes a list of Squall Command objects and will

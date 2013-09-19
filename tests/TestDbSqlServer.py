@@ -10,26 +10,29 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-from squall import Table, Fields, Value, Transaction, Where
-import squallserver as tsql
+from squall import *
+import squallsql as sql
 
 class Test(unittest.TestCase):
 
+    createtransaction = None
 
     def setUp(self):
-        self.sqlobj = squall.Session().connect('rfid', adapter='sqlserver', trusted=True, driver='SQL Server')
-        self.module = squall.db('sqlserver')
+        self.sqlobj = sql.SqlAdapter(driver='squallserver')
+        self.sqlobj.Connect(**{'db_name':'RFID', 'adapter':'sqlserver', 
+                               'trusted':True, 'driver':'SQL Server'})
         
-        self.sqlselect = tsql.Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
-        self.sqlinsert = tsql.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
-        self.sqldelete = tsql.Delete(Table('t'), Where('x', '=', Value(1)))
-        self.sqlupdate = tsql.Update(Table('t'), Fields('y', 'z'), 
-                                              (Value(5), Value(9)), Where('x', '=', Value(1)))
-    
-        assert not self.module is None, 'Python Driver not imported successfully'
+        self.sqlselect = Select(Table('t'), Fields('*'), condition=Where('x', '=', Value(1)))
+        self.sqlinsert = Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        self.sqldelete = Delete(Table('t'), condition=Where('x', '=', Value(1)))
+        self.sqlupdate = Update(Table('t'), Fields('y', 'z'), 
+                                              (Value(5), Value(9)),
+                                              condition=Where('x', '=', Value(1)))
         assert not self.sqlobj is None, 'Squallserver not imported correctly or invalid'
-        vbmsql = tsql.Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x));')
-        createtransaction = tsql.Transaction(self.sqlobj, vbmsql).run()
+        vbmsql = Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x));')
+        self.createtransaction = self.sqlobj.Transaction(vbmsql)
+        self.createtransaction.run()
+        assert not self.createtransaction is None, 'Transaction object is None'
     
     def testSelect(self):
         print("Test: Select Insert Statement")
@@ -40,16 +43,18 @@ class Test(unittest.TestCase):
  
     def testInsertAndDelete(self):
         print("Test: Inserting test data into t table")
-        sqltran = tsql.Transaction(self.sqlobj)
-        self.assertRaises(squall.EmptyTransactionException, sqltran.run)
-        sqltran.add(self.sqlinsert, self.sqlselect, self.sqldelete)
+        self.createtransaction.clear()
+        self.assertRaises(EmptyTransactionException, self.createtransaction.run)
+        self.createtransaction.add(self.sqlinsert, self.sqlselect, self.sqldelete)
         print("Test: Selecting data we inserted")
+        self.createtransaction.run()
  
     def testUpdate(self):
-        sqltran = tsql.Transaction(self.sqlobj, self.sqlinsert, self.sqlupdate)
-        newselect = tsql.Select(Table('t'), Fields('*'), Where('z', '=', Value(9)))
-        sqltran.add(newselect, self.sqldelete)
-        sqltran.run()
+        self.createtransaction.clear()
+        self.createtransaction.add(self.sqlobj, self.sqlinsert, self.sqlupdate)
+        newselect = Select(Table('t'), Fields('*'), Where('z', '=', Value(9)))
+        self.createtransaction.add(newselect, self.sqldelete)
+        self.createtransaction.run()
         
 #         self.sqlobj.insert('INSERT INTO t (x, y, z) VALUES (?, ?, ?)', (5, 4, 3))
 #         self.sqlobj.update('UPDATE t SET y = ? WHERE x = ?', (9999, 5))
@@ -58,8 +63,9 @@ class Test(unittest.TestCase):
         
         
     def tearDown(self):
-        vbmsql = tsql.Verbatim('DROP TABLE t;')
-        droptransaction = tsql.Transaction(self.sqlobj, vbmsql).run()
+        self.createtransaction.clear()
+        vbmsql = Verbatim('DROP TABLE t;')
+        self.createtransaction.add(vbmsql).run()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

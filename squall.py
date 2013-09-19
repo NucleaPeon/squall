@@ -82,9 +82,10 @@ class Sql(Squall):
         self.command = Command(command)
         self.precallback = kwargs.get('precallback')
         self.postcallback = kwargs.get('postcallback')
-        if not str(self.command) in self.COMMANDS:
+        if not str(self.command) in self.COMMANDS or \
+           self.command == '':
             raise InvalidSqlCommandException(
-                'Command {} is not a valid command to issue'.format(
+                'Command <{}> is not a valid command to issue'.format(
                     str(command)))
             
         self.table = table
