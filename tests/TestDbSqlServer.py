@@ -19,7 +19,7 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         self.sqlobj = sql.SqlAdapter(driver='squallserver')
-        self.sqlobj.Connect(**{'db_name':'RFID', 'adapter':'sqlserver', 
+        self.sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
                                'trusted':True, 'driver':'SQL Server'})
         
         self.sqlselect = Select(Table('t'), Fields('*'), condition=Where('x', '=', Value(1)))

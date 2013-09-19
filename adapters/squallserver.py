@@ -54,7 +54,7 @@ class SqlAdapter(object):
                 - dbq: string; microsoft access database file (NOT IMPLEMENTED)
         '''
         #TODO: Connection checking
-        self.conn = None
+        
         connection_str = []
         # Assume sqlserver driver
         driver = 'SQL Server'
@@ -68,9 +68,9 @@ class SqlAdapter(object):
         db_host = kwargs.get('db_host', 'localhost')
         if not db_host is None:
             connection_str.append('SERVER={}'.format(db_host))
-        if not kwargs.get('db_name', None):
-            raise AdapterException(
-                'Database not supplied to driver, cannot connect')
+#         if not kwargs.get('db_name', None):
+#             raise AdapterException(
+#                 'Database not supplied to driver, cannot connect')
         else:
             connection_str.append('DATABASE={}'.format(kwargs.get('db_name')))
         if kwargs.get('trusted', False):
@@ -79,11 +79,15 @@ class SqlAdapter(object):
         if not kwargs.get('uid') is None:
             connection_str.append(kwargs.get('uid'))
         if not kwargs.get('pwd') is None:
-            connection_str.append('PWD=', kwargs.get('pwd'))
+            connection_str.append('PWD={}'.format(kwargs.get('pwd')))
+        if not kwargs.get('server') is None:
+            connection_str.append('SERVER={}'.format(kwargs.get('server')))
             
         # Converts array to string separated by ; characters into configuration
         conn_str = ';'.join(connection_str)
-        return conn_str
+        print(conn_str)
+        self.conn = pyodbc.connect(conn_str)
+        self.cursor = self.conn.cursor()
 
 #     
     def disconnect(self):
