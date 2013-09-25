@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-from squall import Table, Fields, Value, Where, Verbatim
+from squall import Table, Fields, Value, Where, Verbatim, RollbackException
 import squallsql, sqlite3
 
 class Test(unittest.TestCase):
@@ -47,18 +47,20 @@ class Test(unittest.TestCase):
     def testInsertDeleteUpdate(self):
         print("Test: Sqlite3 Select, Insert, Delete and Update")
         trans = self.driver.Transaction()
-        self.sqlselect = self.driver.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
+        self.sqlselect = self.driver.Select(Table('t'), Fields('*'), 
+                                            condition=Where('x', '=', Value(1)))
         assert not self.sqlselect is None, 'Select() object not initialized'
         trans.add(self.sqlselect)
         self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
         assert not self.sqlinsert is None, 'Insert() object not initialized'
         trans.add(self.sqlinsert)
-        self.sqldelete = self.driver.Delete(Table('t'), Where('x', '=', Value(1)))
+        self.sqldelete = self.driver.Delete(Table('t'), 
+                                            condition=Where('x', '=', Value(1)))
         assert not self.sqldelete is None, 'Delete() object not initialized'
         trans.add(self.sqldelete)
         self.sqlupdate = self.driver.Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), 
-                                               Where('x', '=', Value(1)))
+                                               condition=Where('x', '=', Value(1)))
         assert not self.sqlupdate is None, 'Update() object not initialized'
         trans.add(self.sqlupdate)
         trans.run()
@@ -72,12 +74,12 @@ class Test(unittest.TestCase):
     def testSqliteDelete(self):
         print("Test: Sqlite3 Insert and Delete")
         trans = self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
-                                        self.driver.Delete(Table('t'), Where('x', '=', Value(1))))
+                                        self.driver.Delete(Table('t'), condition=Where('x', '=', Value(1))))
         trans2 = self.driver.Transaction(self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)]),
-                                        self.driver.Delete(Table('t'), Where('x', '=', Value(1))))
+                                        self.driver.Delete(Table('t'), condition=Where('x', '=', Value(1))))
         trans.run()
         print("Test: Sqlite3 force rollback on Insert/Delete transaction")
-        self.assertRaises(sqlite3.IntegrityError, trans2.run, force='rollback')
+        self.assertRaises(RollbackException, trans2.run, force='rollback')
           
     def testSqliteUpdate(self):
         print("Test: Sqlite3 Insert and Update")
