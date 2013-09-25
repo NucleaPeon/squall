@@ -1,4 +1,4 @@
-pysquall
+squall
 ====
 
 Database Adapter for multiple sql vendors, one command fits all.
