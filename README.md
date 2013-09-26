@@ -50,27 +50,8 @@ foremost. Multi-threading can be implemented at a later date.
 How to use this software
 ----
 
-Sql Server (Currently Under Construction)
----------
-```
-import squall
-self.sqlobj = squall.Session().connect('myDatabase', adapter='sqlserver', trusted=True, driver='SQL Server')
-self.module = squall.db('sqlserver')
-```
-
-( PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION... )
-
-OR
-
-Sqlite3 
----------
-```
-import squall.squallsql
-driver = squall.squallsql.SqlAdapter(driver='squallsqlite3', 
-                                  database='/path/to/database.db')
-```
-
-( driver will automatically attempt a connection )
+Please read wiki entries for up-to-date information regarding usage.
+https://github.com/NucleaPeon/squall/wiki
  
 Notes on Value objects
 ----------
