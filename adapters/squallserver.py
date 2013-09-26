@@ -85,7 +85,6 @@ class SqlAdapter(object):
             
         # Converts array to string separated by ; characters into configuration
         conn_str = ';'.join(connection_str)
-        print(conn_str)
         self.conn = pyodbc.connect(conn_str)
         self.cursor = self.conn.cursor()
 
@@ -296,7 +295,10 @@ class SqlAdapter(object):
         def __init__(self, *args, **kwargs):
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             self.tname = kwargs.get("name", "Default Transaction")
-            self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
+            if kwargs.get('db_name') is None:
+                self.tpreamble = ['BEGIN TRANSACTION {};'.format(self.tname)]
+            else:
+                self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
                               'BEGIN TRANSACTION {};'.format(self.tname)]
             self.tobjects = args
             self.rollbackstring = 'SET xact_abort ON;'
@@ -309,6 +311,7 @@ class SqlAdapter(object):
                 self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
                                                  self.tpreamble)
             self.cmds = self.tpreamble
+            self.output = {}
             # Tried using a generator, the generator got added
             for x in self.tobjects:
                 self.cmds.append(str(x))

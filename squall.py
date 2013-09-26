@@ -259,16 +259,16 @@ class Delete(Sql):
         return "DELETE FROM {} {}".format(self.table, self.condition)
         
 class Update(Sql):
-    def __init__(self, table, field, values, condition=None, **kwargs):
+    def __init__(self, table, field, values, **kwargs):
         super().__init__('UPDATE', table=table, field=field, values=values,
-                         condition=condition)
+                         condition=kwargs.get('condition', None))
         self.table = table
         self.field = field
         self.values = values
-        if condition is None:
+        if kwargs.get('condition', None) is None:
             self.condition = ''
         else:
-            self.condition = condition
+            self.condition = kwargs.get('condition', None)
         
     def __parse_values(self, field, value):
         return "{} = {}".format(field, value)

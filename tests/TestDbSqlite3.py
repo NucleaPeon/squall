@@ -93,8 +93,12 @@ class Test(unittest.TestCase):
     def testSqlAdapterDriver(self):
         assert not self.driver is None, 'SqlAdapter driver is None'
         
-    def testConditions(self):
-        pass
+    def testLessThan(self):
+        output = self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
+        select = Select(Table('t'), Fields('*'), Where('x', '<', Value(8)))
+        output = self.driver.Transaction(select).run()
+        self.assertGreater(output[str(select)], 0, 'Select did not return rows')
+        
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
