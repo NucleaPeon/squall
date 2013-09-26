@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-from squall import Table, Fields, Value, Where, Verbatim
+from squall import Table, Fields, Value, Where, Verbatim, RollbackException
 import squallsql, sqlite3
 
 class Test(unittest.TestCase):
@@ -79,7 +79,7 @@ class Test(unittest.TestCase):
                                         self.driver.Delete(Table('t'), Where('x', '=', Value(1))))
         trans.run()
         print("Test: Sqlite3 force rollback on Insert/Delete transaction")
-        self.assertRaises(sqlite3.IntegrityError, trans2.run, force='rollback')
+        self.assertRaises(RollbackException, trans2.run, force='rollback')
           
     def testSqliteUpdate(self):
         print("Test: Sqlite3 Insert and Update")
