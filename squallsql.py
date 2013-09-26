@@ -4,6 +4,8 @@ converted into SQL syntactical strings yet can be manipulated as an
 object. Does not include database specific code.
 '''
 import squall
+import importlib
+
 class SqlAdapter(object):
     '''
     :Description:
@@ -26,10 +28,10 @@ class SqlAdapter(object):
         '''
         '''
         super().__init__()
-        import importlib
+        print(kwargs.get('driver'))
         self.module = importlib.import_module(kwargs.get('driver', None))
         if self.module is None:
-            raise squall.AdapterException()
+            raise squall.AdapterException('Did not find module: {}'.format(self.module))
         self.sqladapter = self.module.SqlAdapter(*args, **kwargs)
         self.Connect(*args, **kwargs)
         

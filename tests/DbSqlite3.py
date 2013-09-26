@@ -47,18 +47,20 @@ class Test(unittest.TestCase):
     def testInsertDeleteUpdate(self):
         print("Test: Sqlite3 Select, Insert, Delete and Update")
         trans = self.driver.Transaction()
-        self.sqlselect = self.driver.Select(Table('t'), Fields('*'), Where('x', '=', Value(1), []))
+        self.sqlselect = self.driver.Select(Table('t'), Fields('*'), 
+                                            condition=Where('x', '=', Value(1)))
         assert not self.sqlselect is None, 'Select() object not initialized'
         trans.add(self.sqlselect)
         self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
         assert not self.sqlinsert is None, 'Insert() object not initialized'
         trans.add(self.sqlinsert)
-        self.sqldelete = self.driver.Delete(Table('t'), Where('x', '=', Value(1)))
+        self.sqldelete = self.driver.Delete(Table('t'), 
+                                            condition=Where('x', '=', Value(1)))
         assert not self.sqldelete is None, 'Delete() object not initialized'
         trans.add(self.sqldelete)
         self.sqlupdate = self.driver.Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), 
-                                               Where('x', '=', Value(1)))
+                                               condition=Where('x', '=', Value(1)))
         assert not self.sqlupdate is None, 'Update() object not initialized'
         trans.add(self.sqlupdate)
         trans.run()
