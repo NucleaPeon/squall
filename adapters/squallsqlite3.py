@@ -19,6 +19,7 @@ Basic Overview:
 
 import sys, sqlite3
 from squall import *
+from squallerrors import *
 sys.path.append('..')
 
 class SqlAdapter(object):
@@ -28,6 +29,9 @@ class SqlAdapter(object):
     '''
     conn = None
     cursor = None
+    
+    # - Begin Specific SQL Definitions
+    # - End Specific SQL Definitions
     
     _instance = None
     def __new__(self, *args, **kwargs):

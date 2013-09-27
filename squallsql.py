@@ -1,9 +1,11 @@
 '''
-SquallSql is the python module that contains basic Sql objects that get
-converted into SQL syntactical strings yet can be manipulated as an
-object. Does not include database specific code.
+SquallSql is the python module that contains Sql Object references and
+generic driver references.
 '''
-import squall, sys, os
+import squall
+import sys
+import os
+from squallerrors import AdapterException
 
 sys.path.append(os.path.join(os.getcwd(), 'adapters'))
 
@@ -23,16 +25,39 @@ class SqlAdapter(object):
         doing.
         
     '''
+    
+    # - Begin SQL Specific Definitions
+    Select = squall.Select
+    Condition = squall.Condition
+    Drop = squall.Drop
+    Create = squall.Create
+    Union = squall.Union
+    Select = squall.Select
+    Insert = squall.Insert
+    Delete = squall.Delete
+    Update = squall.Update
+    Where = squall.Where
+    WhereIn = squall.Where
+    Order = squall.Order
+    Exists = squall.Exists
+    Value = squall.Value
+    Table = squall.Table
+    Fields = squall.Fields
+    Group = squall.Group
+    Having = squall.Having
+    Verbatim = squall.Verbatim
+    # - End SQL Specific Definitions
+    
     sqladapter = None
     
     def __init__(self, *args, **kwargs):
         '''
         '''
-        super().__init__()
         import importlib
+        # Excepts the filename (without extension) of the adapter module
         self.module = importlib.import_module(kwargs.get('driver'), '')
         if self.module is None:
-            raise squall.AdapterException()
+            raise AdapterException()
         self.sqladapter = self.module.SqlAdapter(*args, **kwargs)
         
     def Connect(self, *args, **kwargs):
