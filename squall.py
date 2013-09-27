@@ -5,11 +5,16 @@
 # Date:   July 25 2013
 #
 
-'''
-TODO: How to init an adapter, how to call it/close it
+__all__ = ['Sql', 'Drop', 'Create', 'Select', 'Insert', 'Update', 'Delete', 'Condition',
+           'Where', 'WhereIn', 'Having', 'Exists', 'Order',
+           'Table', 'Fields', 'Value', 'Group', 'Verbatim']
 
-FIXME: Threading 
-'''
+# Only import what we need
+import datetime as dt
+from squallerrors import InvalidSqlCommandException, InvalidSqlConditionException, \
+                         InvalidSqlWhereClauseException, InvalidSqlValueException, \
+                         InvalidDistinctFieldFormat
+
 
 ADAPTERS = {'sqlite3' : None,
             'sqlserver': None, # Uses odbc drivers
@@ -17,7 +22,6 @@ ADAPTERS = {'sqlite3' : None,
             'postgres': None,
             'firebird': None}
 
-import datetime as dt
 
 class Squall():
     '''
@@ -32,7 +36,7 @@ class Squall():
     '''
     def __init__(self):
         pass
-
+    
 class Sql(Squall):
     '''
     :Description:
@@ -75,10 +79,11 @@ class Sql(Squall):
     '''
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
-    def __init__(self, command='', table=None, field = None, 
-                 values = [], condition = None, **kwargs):
+    def __init__(self, command='', table=None, field=None, 
+                 values=[], **kwargs):
         
         super().__init__()
+        condition = kwargs.get('condition', None)
         self.command = Command(command)
         self.precallback = kwargs.get('precallback')
         self.postcallback = kwargs.get('postcallback')
@@ -189,7 +194,6 @@ class Union(Sql):
             Concats 
         '''
         
-        
 
 class Select(Sql):
     
@@ -260,7 +264,7 @@ class Delete(Sql):
         
 class Update(Sql):
     def __init__(self, table, field, values, **kwargs):
-        super().__init__('UPDATE', table=table, field=field, values=values,
+        super().__init__('UPDATE', table, field, values,
                          condition=kwargs.get('condition', None))
         self.table = table
         self.field = field
@@ -656,57 +660,3 @@ class Verbatim(Sql):
         return "{}".format(self.sql)
     
     
-### Exceptions ###
-
-    
-class AdapterException(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        
-class MissingDatabaseAdapterException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlCommandException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlValueException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlWhereClauseException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlConditionException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class EmptyTransactionException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-
-class RollbackException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class CommitException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSquallObjectException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidDatabaseNameException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidDistinctFieldFormat(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class NotImplementedException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)

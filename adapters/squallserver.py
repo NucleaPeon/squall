@@ -413,3 +413,9 @@ class SqlAdapter(object):
             return '\n'.join(self.cmds)
 
     
+class Create(Sql):
+    '''
+    '''
+    
+    def __init__(self):
+        pass
