@@ -28,7 +28,6 @@ class SqlAdapter(object):
         '''
         '''
         super().__init__()
-        print(kwargs.get('driver'))
         self.module = importlib.import_module(kwargs.get('driver', None))
         if self.module is None:
             raise squall.AdapterException('Did not find module: {}'.format(self.module))
