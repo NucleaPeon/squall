@@ -71,6 +71,8 @@ driver = squall.squallsql.SqlAdapter(driver='squallsqlite3',
 ```
 
 ( driver will automatically attempt a connection )
+
+When specifying the "driver" kwarg, the value would be the module name of the adapter class that reflects the db you want to use.
  
 Notes on Value objects
 ----------

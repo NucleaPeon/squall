@@ -17,7 +17,13 @@ Basic Overview:
     squallsql) instead of direct adapter sql/sql_compat methods
 '''
 
+<<<<<<< HEAD
 import sys, squall, sqlite3
+=======
+import sys, sqlite3
+from squall import *
+sys.path.append('..')
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
 
 class SqlAdapter(object):
     '''
@@ -49,10 +55,14 @@ class SqlAdapter(object):
         db_host = 'localhost'
         self.db_name = kwargs.get('database', None)
         if self.db_name is None:
+<<<<<<< HEAD
             raise squall.InvalidDatabaseNameException(
+=======
+            raise InvalidDatabaseNameException(
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
                 'Did not find database name parameter with SqlAdapter init')
         if not kwargs.get('host') is None:
-            db_host = kwargs.get('host')
+            db_host = kwargs.get('host', db_host)
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor() # We need this cursor in the class
         return self.conn
@@ -97,11 +107,19 @@ class SqlAdapter(object):
         :Description:
             Explicitly invoke a rollback exception for sqlite3
         '''
+<<<<<<< HEAD
         raise squall.RollbackException('rollback() method invoked')
     
 
         
     class Transaction(squall.Sql):
+=======
+        raise RollbackException('rollback() method invoked')
+    
+
+        
+    class transaction(Sql):
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
         '''
         :Description:
             Transaction object that takes a list of Squall Command objects and will
@@ -136,7 +154,11 @@ class SqlAdapter(object):
             self.add(*args)
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             if self.adapter is None:
+<<<<<<< HEAD
                 raise squall.MissingDatabaseAdapterException('No adapter object to connect to')
+=======
+                raise MissingDatabaseAdapterException('No adapter object to connect to')
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
             
         def add(self, *args):
             '''
@@ -144,12 +166,21 @@ class SqlAdapter(object):
                 - args: list; all sqlobjects that were provided as arguments
             '''
             for a in args:
+<<<<<<< HEAD
                 if not isinstance(a, squall.Sql):
                     if isinstance(a, str):
                         self.tobjects.append(squall.Verbatim(a))
                         continue
                     else:
                         raise squall.InvalidSquallObjectException(
+=======
+                if not isinstance(a, Sql):
+                    if isinstance(a, str):
+                        self.tobjects.append(Verbatim(a))
+                        continue
+                    else:
+                        raise InvalidSquallObjectException(
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
                             'Cannot add non-sql object {}'.format(str(a)))
                 self.tobjects.append(a)
             return args
@@ -210,6 +241,7 @@ class SqlAdapter(object):
                 self.adapter.commit()
                 
             if len(self.tobjects) == 0:
+<<<<<<< HEAD
                 raise squall.EmptyTransactionException('No objects to execute')
             for tobj in self.tobjects:
                 if not isinstance(tobj, squall.Sql):
@@ -218,6 +250,16 @@ class SqlAdapter(object):
                 
             for squallobj in self.tobjects:
                 if isinstance(squallobj, squall.Select):
+=======
+                raise EmptyTransactionException('No objects to execute')
+            for tobj in self.tobjects:
+                if not isinstance(tobj, Sql):
+                    raise InvalidSquallObjectException('{} is invalid'.format(
+                        str(tobj)))
+                
+            for squallobj in self.tobjects:
+                if isinstance(squallobj, Select):
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
                     self.output[str(squallobj)] = self.adapter.sql_compat(str(squallobj))
                 else:
                     self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
@@ -226,15 +268,26 @@ class SqlAdapter(object):
             self.adapter.commit()
             
             if not kwargs.get('raise_exception') is None:
+<<<<<<< HEAD
                 raise squall.CommitException('Committed Transaction')
+=======
+                raise CommitException('Committed Transaction')
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
             return self.clear()
                 
         def pretend(self):
             if len(self.tobjects) == 0:
+<<<<<<< HEAD
                 raise squall.EmptyTransactionException('No objects to execute')
             for tobj in self.tobjects:
                 if not isinstance(tobj, squall.Sql):
                     raise squall.InvalidSquallObjectException('{} is invalid'.format(
+=======
+                raise EmptyTransactionException('No objects to execute')
+            for tobj in self.tobjects:
+                if not isinstance(tobj, Sql):
+                    raise InvalidSquallObjectException('{} is invalid'.format(
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
                         str(tobj)))
                     
             try:
@@ -242,7 +295,11 @@ class SqlAdapter(object):
                     self.adapter.sql(str(squallobj))
                 self.adapter.rollback()
             except Exception:
+<<<<<<< HEAD
                 raise squall.RollbackException(
+=======
+                raise RollbackException(
+>>>>>>> eb2baa85083575bda8180b1f026b5ec8e67f6c17
                     'Exception raised: {}'.format(sys.exc_info()[0]))
             return self.tobjects
         

@@ -4,7 +4,7 @@
 # Author: Daniel Kettle
 # Date:   July 29 2013
 #
-# TODO: Group(), Having(), Order(), Union(), Except(), Intersect()
+# TODO: Group(), Having(), Union(), Except(), Intersect()
 #
 
 '''
@@ -24,24 +24,26 @@ There are actually two or three SQL Server drivers written and distrubuted by Mi
 import sys, os
 sys.path.append(os.path.join('..'))
 
-import squall, squallsql
+from squall import *
+import pyodbc
 
 class SqlAdapter(object):
     '''
     API for calling odbc (sql server)
-    
     Expects the odbc module as module parameter
     '''
     
-    def __init__(self, module):
-        super().__init__()
-        self.module = module
+    _instance = None
+    def __new__(self, *args, **kwargs):
+        if not self._instance:
+            self._instance = super().__new__(self)
+        return self._instance
         
-    def connect(self, db_name, **kwargs):
+    def connect(self, *args, **kwargs):
         '''
         :Parameters:
-            - db_name: string; name of database file
             - **kwargs: dictionary; contains list of parameters for connections
+                - db_name: name of database
                 - driver: string; name of sql server (or odbc driver)
                 - db_host: string; hostname, can be localhost or remote address
                 - uid: string; User identifier for connection
@@ -52,35 +54,42 @@ class SqlAdapter(object):
                 - dbq: string; microsoft access database file (NOT IMPLEMENTED)
         '''
         #TODO: Connection checking
-        self.conn = None
-        connection_str = []
-        self.db_name = db_name
         
+        connection_str = []
         # Assume sqlserver driver
-        driver = kwargs.get('driver', 'SQL Server')
+        driver = 'SQL Server'
+        # TODO:
+        #     Connect to odbc
+#         self.conn = self.module.connect(conn_str) 
+#         self.cursor = self.conn.cursor() # We need this cursor in the class
+#         return self.conn
+        # self.cursor = self.conn.cursor()
         connection_str.append('DRIVER={{{}}}'.format(driver))
         db_host = kwargs.get('db_host', 'localhost')
         if not db_host is None:
             connection_str.append('SERVER={}'.format(db_host))
-        if not self.db_name:
-            raise squall.AdapterException(
-                'Database not supplied to driver, cannot connect')
+#         if not kwargs.get('db_name', None):
+#             raise AdapterException(
+#                 'Database not supplied to driver, cannot connect')
         else:
-            connection_str.append('DATABASE={}'.format(self.db_name))
+            connection_str.append('DATABASE={}'.format(kwargs.get('db_name')))
         if kwargs.get('trusted', False):
             connection_str.append('Trusted_Connection=yes')
             
         if not kwargs.get('uid') is None:
             connection_str.append(kwargs.get('uid'))
         if not kwargs.get('pwd') is None:
-            connection_str.append('PWD=', kwargs.get('pwd'))
+            connection_str.append('PWD={}'.format(kwargs.get('pwd')))
+        if not kwargs.get('server') is None:
+            connection_str.append('SERVER={}'.format(kwargs.get('server')))
             
         # Converts array to string separated by ; characters into configuration
         conn_str = ';'.join(connection_str)
-        self.conn = self.module.connect(conn_str) 
-        self.cursor = self.conn.cursor() # We need this cursor in the class
-        return self.conn
-    
+        print(conn_str)
+        self.conn = pyodbc.connect(conn_str)
+        self.cursor = self.conn.cursor()
+
+#     
     def disconnect(self):
         '''
         :Description:
@@ -267,172 +276,137 @@ class SqlAdapter(object):
         '''
         self.conn.rollback()
         
-class Insert(squallsql.Sql):
-    '''
-    Insert object that inherits Base Insert object in
-    squallsql. 
-    
-    Note: Same as sqlite3 driver, which this is based off of.
-    
-    :Description:
-        Sql Server Insert object that properly formats insert statements
-        in sql server format.
+    class transaction(Sql):
+        '''
+        Sql Server Transaction object
         
-    :Parameters:
-        - table: Table() object; 
-        - field: Fields() object;
-        - values: [Value()] object;
-    '''
-    def __init__(self, table, field, values):
-        super().__init__('INSERT', table, field, values)
-        self.table = table
-        self.field = field
-        self.values = values
+        :Description:
+            Manages transactions from an sqlserver-specific perspective.
+            
+        :Parameters:
+            - adapter: object; sql database adapter object
+            - *args: list; arguments containing sql objects to add to transaction
+            - **kwargs: dict; specific arguments for managing the sql server transaction
+                - name: string; what to name the transaction statement ??
+                - command: string; COMMIT or ROLLBACK
+                - adapter: object; refers to this SqlAdapter instance
+                - 
+        '''
         
-    def __repr__(self):
-        mf = self.field
-        if self.field.fields != '':
-            mf = '{}{}{}'.format(' (', mf, ')')
-        return "INSERT INTO {}{} VALUES ({});".format(self.table, 
-                                mf,
-                                ', '.join(str(x) for x in self.values))
+        def __init__(self, *args, **kwargs):
+            self.adapter = kwargs.get('adapter', SqlAdapter._instance)
+            self.tname = kwargs.get("name", "Default Transaction")
+            self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
+                              'BEGIN TRANSACTION {};'.format(self.tname)]
+            self.tobjects = args
+            self.rollbackstring = 'SET xact_abort ON;'
+            self.tdefaultcmd = kwargs.get('command', 'COMMIT')
+            self.tsuffix = '{} {} {}'.format(self.tdefaultcmd, 'TRANSACTION', 
+                                             self.tname)
+            if self.tdefaultcmd == 'ROLLBACK':
+                # Format string to set rollback on incorrect statement
+                # during transaction
+                self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
+                                                 self.tpreamble)
+            self.cmds = self.tpreamble
+            # Tried using a generator, the generator got added
+            for x in self.tobjects:
+                self.cmds.append(str(x))
+            self.cmds.append(self.tsuffix)
+            
+        def add(self, *args):
+            '''
+            :Returns:
+                - args: list; all sqlobjects that were provided as arguments
+            '''
+            for a in args:
+                if not isinstance(a, Sql):
+                    if isinstance(a, str):
+                        self.tobjects.append(Verbatim(a))
+                        continue
+                    else:
+                        raise InvalidSquallObjectException(
+                            'Cannot add non-sql object {}'.format(str(a)))
+                self.tobjects.append(a)
+            return args
+                
+        def clear(self):
+            '''
+            :Returns:
+                All the transaction's current sql output from selects
+            '''
+            output = self.output
+            self.output = {}
+            self.tobjects = []
+            return output
         
-class Select(squallsql.Sql):
-    '''
-    Select object that inherits Base Insert object in
-    squallsql. 
-    
-    Note: Same as sqlite3 driver, which this is based off of.
-    
-    :Description:
-        Sql Server Select object that properly formats insert statements
-        in sql server format.
-        
-    :Parameters:
-        - table: Table() object; 
-        - field: Fields() object;
-        - values: [Value()] object;
-    '''
-    
-    def __init__(self, table, fields, condition=None):
-        super().__init__('SELECT', table, fields, condition)
-        self.table = table
-        self.fields = fields
-        self.existsflag = False
-        if isinstance(condition, squallsql.Where):
-            self.condition = condition
-        elif isinstance(condition, squallsql.Exists):
-            # FIXME: Bad coding practice, may get rid of
-            self.existsflag = True
-        else: 
-            self.condition = ''
-        self.lastqueryresults = ''
-        
-    def __repr__(self):
-        #if self.existsflag:
-            #TODO
-#             return '''SELECT EXISTS({} FROM {} {})'''.format( 
-#              self.fields, self.table)
-        # Exists is not yet implemented            
-        return '''SELECT {} FROM {} {};'''.format( 
-             self.fields, self.table, self.condition) 
-    
-class Delete(squallsql.Sql):
-    def __init__(self, table, condition=None):
-        super().__init__('DELETE', table=table, condition=condition)
-        self.table = table
-        if isinstance(condition, squallsql.Where):
-            self.condition = condition
-        else:
-            self.condition = ''
-        
-    def __repr__(self):
-        return "DELETE FROM {} {};".format(self.table, self.condition)
-    
-class Update(squallsql.Sql):
-    
-    def __init__(self, table, field, values, condition=None):
-        super().__init__('UPDATE', table=table, field=field, values=values,
-                         condition=condition)
-        self.table = table
-        self.field = field
-        self.values = values
-        if condition is None:
-            self.condition = ''
-        else:
-            self.condition = condition
-    
-    def __parse_values(self, field, value):
-        return "{} = {}".format(field, value)
-        
-    def __repr__(self):
-        cond = ''
-        if not self.condition is None:
-            cond = ' {}'.format(str(self.condition))
-        params = []
-        
-        if len(self.field.fields) == 1:
-            # Not an array, but one field
-            if not isinstance(self.values, str):
-                raise squall.InvalidSqlValueException(
-                    'Non-Equal fields [1] to values [{}] ratio'.format(
-                        len(self.values)))
-            return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
-        for i in range(0, len(self.values)):
-            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
-        
-        return "UPDATE {} SET {}{};".format(self.table, ', '.join(params), cond)
-    
-class Transaction(squallsql.Transaction):
-    '''
-    Sql Server Transaction object
-    
-    :Description:
-        Manages transactions from an sqlserver-specific perspective.
-        
-    :Parameters:
-        - adapter: object; sql database adapter object
-        - *args: list; arguments containing sql objects to add to transaction
-        - **kwargs: dict; specific arguments for managing the sql server transaction
-            - name: string; what to name the transaction statement
-            - command: string; COMMIT or ROLLBACK             
-    '''
-    
-    def __init__(self, adapter, *args, **kwargs):
-        super().__init__(adapter, *args)
-        self.tname = kwargs.get("name", "Default Transaction")
-        self.tpreamble = ['USE {};'.format(adapter.db_name), 
-                          'BEGIN TRANSACTION {};'.format(self.tname)]
-        self.rollbackstring = 'SET xact_abort ON;'
-        self.tdefaultcmd = kwargs.get('command', 'COMMIT')
-        self.tsuffix = '{} {} {}'.format(self.tdefaultcmd, 'TRANSACTION', 
-                                         self.tname)
-        if self.tdefaultcmd == 'ROLLBACK':
-            # Format string to set rollback on incorrect statement
-            # during transaction
-            self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
-                                             self.tpreamble)
-        self.cmds = self.tpreamble
-        # Tried using a generator, the generator got added
-        for x in self.tobjects:
-            self.cmds.append(str(x))
-        self.cmds.append(self.tsuffix)
-        
-    def __repr__(self):
-        return '\n'.join(self.cmds)
-        
-    
-class Verbatim(squallsql.Sql):
-    '''
-    :Description:
-        Verbatim is a class whose purpose is to pipe direct
-        string sql commands into the database driver. This is to
-        allow customization by preference of the developer.
-    '''
-    # TODO
-    def __init__(self, sql):
-        self.sql = sql
-        
-    def __repr__(self):
-        return "{}".format(self.sql)
+        def run(self, *args, **kwargs):
+            '''
+            :Description:
+                Goes through every Squall Command object and runs the sql through
+                the adapter object supplied. (When an adapter class overrides this
+                method, it should supply the adapter automatically, so only args
+                need to be supplied.)
+                Raises an exception and attempts to rollback when an exception
+                is found, meaning an error arose during sql execution.
+                commit() is called if no errors during execution occur.
+                
+            :Parameters:
+                - **kwargs: dict; 
+                    - rollback_callback: If a rollback is called, call this method
+                    - success_callback: If Transaction completes as expected, call this
+                      method
+                    - raise_exception: boolean; raise exceptions on execution completion
+                      or error. (great for stricter environments) This does mean that
+                      no return statements will be called unless embedded into the error
+                      message or object. 
+                    - force: either "commit" or "rollback" is acceptable.
+                            
+            :Exceptions:
+                - EmptyTransactionException: Called when *args is empty and nothing
+                  can be run
+                - RollbackException: when raise_exception is True, committing and
+                  rolling back will raise an exception. This is raised when a 
+                  rollback is encountered.
+                - CommitException: when raise_exception is True, committing and
+                  rolling back will raise an exception. This is raised when a 
+                  commit is successful.
+                - InvalidSquallObjectException - If at any point an AdapterException
+                  is raised during execution of sql objects.
+                  
+            :Returns:
+                - None if rollback occured and transaction failed,
+                - list if successful commit, list contains all transaction objects
+            '''
+            #Handle force cases first
+            if kwargs.get('force') == 'rollback':
+                self.clear()
+                self.adapter.rollback()
+            elif kwargs.get('force') == 'commit':
+                self.adapter.commit()
+                
+            if len(self.tobjects) == 0:
+                raise EmptyTransactionException('No objects to execute')
+            for tobj in self.tobjects:
+                if not isinstance(tobj, Sql):
+                    raise InvalidSquallObjectException('{} is invalid'.format(
+                        str(tobj)))
+                
+            for squallobj in self.tobjects:
+                if isinstance(squallobj, Select):
+                    self.output[str(squallobj)] = self.adapter.sql_compat(str(squallobj))
+                else:
+                    self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
+                # via sqlite3, so we don't have to check for this. Other db's will have
+                # to reimplement this.
+            self.adapter.commit()
+            
+            if not kwargs.get('raise_exception') is None:
+                raise CommitException('Committed Transaction')
+            return self.clear()
+            
+            
+        def __repr__(self):
+            return '\n'.join(self.cmds)
+
     
