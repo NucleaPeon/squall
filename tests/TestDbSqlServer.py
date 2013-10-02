@@ -37,10 +37,11 @@ class Test(unittest.TestCase):
         self.createtransaction = self.sqlobj.Transaction(self.sqlinsert)
         
         assert not self.createtransaction is None, 'Transaction object is None'
-        self.createtransaction.run()    
+#         self.createtransaction.run()    
         
     def testInsert(self):
         self.createtransaction.add(self.sqlinsert)
+        
         
 #         
 #     def testSelect(self):

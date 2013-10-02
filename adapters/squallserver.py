@@ -25,6 +25,7 @@ import sys, os
 sys.path.append(os.path.join('..'))
 
 from squall import *
+from squallerrors import *
 import pyodbc
 
 class SqlAdapter(object):
@@ -300,7 +301,8 @@ class SqlAdapter(object):
             else:
                 self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
                               'BEGIN TRANSACTION {};'.format(self.tname)]
-            self.tobjects = args
+            self.tobjects = []
+            self.tobjects.extend(args)
             self.rollbackstring = 'SET xact_abort ON;'
             self.tdefaultcmd = kwargs.get('command', 'COMMIT')
             self.tsuffix = '{} {} {}'.format(self.tdefaultcmd, 'TRANSACTION', 

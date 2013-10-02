@@ -104,10 +104,10 @@ class SqlAdapter(object):
             Explicitly invoke a rollback exception for sqlite3
         '''
         raise RollbackException('rollback() method invoked')
-    
 
-        
+    
     class transaction(Sql):
+
         '''
         :Description:
             Transaction object that takes a list of Squall Command objects and will
