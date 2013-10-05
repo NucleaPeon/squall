@@ -472,6 +472,11 @@ class Exists(Condition):
     
     
     def __init__(self, exists=True, conditions = []):
-        pass
+        self.exists = exists
+        self.conditions = conditions
+        
+    def __repr__(self):
+        ifnot = "NOT " if not self.exists else '' 
+        return "IF {}EXISTS".format(ifnot)
     
     

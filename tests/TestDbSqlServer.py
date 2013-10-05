@@ -16,6 +16,7 @@ sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 import unittest
 from squall import *
 import squallsql as sql
+import squallserver as sqlserver
 
 class Test(unittest.TestCase):
 
@@ -81,8 +82,11 @@ class Test(unittest.TestCase):
 #         self.sqlobj.select('SELECT x, y, z FROM t WHERE y = 9999', ())
 #         self.sqlobj.delete('DELETE FROM t WHERE x = 5', ())
         
-    def testNothing(self):
-        pass
+    def testConditionExists(self):
+        notcondition = sqlserver.Exists(exists=False)
+        self.assertEqual('IF NOT EXISTS', str(repr(notcondition)), 'Condition does not match up with expected string')
+        condition = sqlserver.Exists(exists=True)
+        self.assertEqual('IF EXISTS', str(repr(condition)), 'Condition does not match up with expected string')
         
     def tearDown(self):
         self.createtransaction.add(Verbatim('DROP TABLE t'))
