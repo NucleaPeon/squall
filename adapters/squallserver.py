@@ -442,10 +442,45 @@ class SqlAdapter(object):
     
 class Create(Sql):
     '''
+    :Description:
+        Sql Object for creating Tables in the database
+        
+    :Parameters:
+        - table: Sql(); Table object
+        - fields: Sql(); Fields in the Table to create
+        - constraints: Sql(); Constraint object on a Field
+    
+    TODO: Implement exists in repr() for both drop and create
     '''
     
-    def __init__(self):
-        pass
+    def __init__(self, table, fields, constraints = [], exists=None, **kwargs):
+        self.table = table
+        self.fields = fields
+        self.constraints = constraints
+        self.exists = exists
+        
+    def __repr__(self):
+        return "CREATE TABLE {}({}{})".format(self.table, 
+                                              ', '.join(self.fields),
+                                              ', '.join(self.constraints))
+        
+        
+class Drop(Sql):
+    '''
+    :Description:
+        Sql Object for dropping Tables in the database
+        
+    :Parameters:
+        - table: Sql(); Table object
+        
+    '''
+    
+    def __init__(self, table, exists=None, **kwargs):
+        self.table = table
+        self.exists = exists
+         
+    def __repr__(self):
+        return "DROP TABLE {}".format(self.table)
     
 class Exists(Condition):
     '''
