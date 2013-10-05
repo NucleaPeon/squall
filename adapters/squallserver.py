@@ -36,56 +36,81 @@ class SqlAdapter(object):
     
     _instance = None
     def __new__(self, *args, **kwargs):
+        '''
+        :Description:
+            Singleton pattern that instantiates an SqlAdapter object
+            
+        :Parameters:
+            - *args: iterable position-based parameters, received from 
+                     squallsql SqlAdapter object init.
+                     (Currently do nothing here)
+                     
+            - **kwargs: dictionary of parameters, received from 
+                        squallsql SqlAdapter object init.
+                        (Currently do nothing here)
+        '''
         if not self._instance:
             self._instance = super().__new__(self)
         return self._instance
+    
+    def __init__(self, *args, **kwargs):
+        '''
+        :Description:
+            Initialization of database-specific SqlAdapter
+            
+            > Parse the kwarg 'database' keyword to set the sql server 
+              database, otherwise it will use 'master' by default.
+        '''
+        self.database = kwargs.get('database', 'master') 
+        
         
     def connect(self, *args, **kwargs):
         '''
         :Parameters:
             - **kwargs: dictionary; contains list of parameters for connections
-                - db_name: name of database
+                - database: name of database. If left empty or None, will default
+                            to 'master'
                 - driver: string; name of sql server (or odbc driver)
                 - db_host: string; hostname, can be localhost or remote address
                 - uid: string; User identifier for connection
                 - pwd: string; Password for user
                 - trusted: boolean; Whether to assume user's current credentials
                   INSTEAD of a username/password pair for login to connection
-                - dsn: string; 
+                - dsn: string; (NOT IMPLEMENTED)
                 - dbq: string; microsoft access database file (NOT IMPLEMENTED)
         '''
         #TODO: Connection checking
         
-        connection_str = []
+        self.connection_str = []
         # Assume sqlserver driver
-        driver = 'SQL Server'
+        self.driver = 'SQL Server'
         # TODO:
         #     Connect to odbc
 #         self.conn = self.module.connect(conn_str) 
 #         self.cursor = self.conn.cursor() # We need this cursor in the class
 #         return self.conn
         # self.cursor = self.conn.cursor()
-        connection_str.append('DRIVER={{{}}}'.format(driver))
-        db_host = kwargs.get('db_host', 'localhost')
-        if not db_host is None:
-            connection_str.append('SERVER={}'.format(db_host))
+        self.connection_str.append('DRIVER={{{}}}'.format(self.driver))
+        self.db_host = kwargs.get('db_host', 'localhost')
 #         if not kwargs.get('db_name', None):
 #             raise AdapterException(
 #                 'Database not supplied to driver, cannot connect')
-        else:
-            connection_str.append('DATABASE={}'.format(kwargs.get('db_name')))
+        self.database = kwargs.get('database', 'master')
+        self.connection_str.append('DATABASE={}'.format(self.database))
+        
         if kwargs.get('trusted', False):
-            connection_str.append('Trusted_Connection=yes')
+            self.connection_str.append('Trusted_Connection=yes')
             
         if not kwargs.get('uid') is None:
-            connection_str.append(kwargs.get('uid'))
+            self.connection_str.append(kwargs.get('uid'))
         if not kwargs.get('pwd') is None:
-            connection_str.append('PWD={}'.format(kwargs.get('pwd')))
+            self.connection_str.append('PWD={}'.format(kwargs.get('pwd')))
         if not kwargs.get('server') is None:
-            connection_str.append('SERVER={}'.format(kwargs.get('server')))
+            self.connection_str.append('SERVER={}'.format(kwargs.get('server')))
+        
             
         # Converts array to string separated by ; characters into configuration
-        conn_str = ';'.join(connection_str)
+        conn_str = ';'.join(self.connection_str)
         self.conn = pyodbc.connect(conn_str)
         self.cursor = self.conn.cursor()
 
@@ -297,10 +322,10 @@ class SqlAdapter(object):
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             self.tname = kwargs.get("name", "Default Transaction")
             if kwargs.get('db_name') is None:
-                self.tpreamble = ['BEGIN TRANSACTION {};'.format(self.tname)]
+                self.tpreamble = ['BEGIN TRANSACTION {}'.format(self.tname)]
             else:
                 self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
-                              'BEGIN TRANSACTION {};'.format(self.tname)]
+                              'BEGIN TRANSACTION {}'.format(self.tname)]
             self.tobjects = []
             self.tobjects.extend(args)
             self.rollbackstring = 'SET xact_abort ON;'
@@ -421,3 +446,32 @@ class Create(Sql):
     
     def __init__(self):
         pass
+    
+class Exists(Condition):
+    '''
+    :Description:
+        Sql Condition that determines whether statements should be run based 
+        on the existance of certain elements, such as a Table, Field or Value.
+        
+        SqlServer Exist conditions are executed in a query before the main
+        queries are executed like so:
+            - If [not] exists (...select...query...) [do statements here]
+            
+        Exist() for SqlServer objects expects that the Sql Statements
+        (Update(), Delete(), Select(), Insert(), Drop() and Create()) will
+        check for Exists() conditions specifically in their __repr__
+        methods and surround the statement properly. This is not like sqlite3
+        Exists which trails the sql statement.
+        
+    :Parameters:
+        - exists; bool: If True, check that condition exists, otherwise check
+                        its absence (using NOT keyword)
+        - conditions; Condition: Addition Condition objects for more precise
+                                 existential checking
+    '''
+    
+    
+    def __init__(self, exists=True, conditions = []):
+        pass
+    
+    

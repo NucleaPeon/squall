@@ -5,6 +5,10 @@
 # Date:   July 29 2013
 #
 
+### NOTE ###
+# This Entire test assumes that an empty database named "test" has been created
+# and is accessible to a trusted user.
+
 import sys, os
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
@@ -15,33 +19,39 @@ import squallsql as sql
 
 class Test(unittest.TestCase):
 
+    sqlobj = sql.SqlAdapter(driver='squallserver')
     createtransaction = None
-
     sqlselect = Select(Table('t'), Fields('*'), condition=Where('x', '=', Value(1)))
-    sqlinsert = Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+    sqlinsert = Insert(Table('t'), Fields(), [Value(2), Value(2), Value(3)])
     sqldelete = Delete(Table('t'), condition=Where('x', '=', Value(1)))
     sqlupdate = Update(Table('t'), Fields('y', 'z'), 
                                           (Value(5), Value(9)),
                                           condition=Where('x', '=', Value(1)))
     
-    sqlobj = sql.SqlAdapter(driver='squallserver')
-    sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
-                               'trusted':True, 'driver':'SQL Server'})
 
     def setUp(self):
-        assert not self.sqlobj is None, 'squallserver not imported correctly or invalid'
-        vbmsql = Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))')
-        print(vbmsql)
-        print(self.sqlinsert)
-        
-        self.createtransaction = self.sqlobj.Transaction(self.sqlinsert)
-        
+        self.sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
+                               'trusted':True, 'driver':'SQL Server'})
+        self.createtransaction = self.sqlobj.Transaction()
+        assert not self.sqlobj is None, 'squallserver not imported correctly or invalid' 
+        assert not self.createtransaction is None, 'Transaction object not instantiated' 
+#         self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
+        vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
+        self.createtransaction.add(vobj)
         assert not self.createtransaction is None, 'Transaction object is None'
-#         self.createtransaction.run()    
+        print(vobj)
+        self.createtransaction.run()
         
-    def testInsert(self):
-        self.createtransaction.add(self.sqlinsert)
-        
+#     def testDropAndCreate(self):
+#         self.createtransaction.clear()
+#         self.createtransaction.add(Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x)))'),
+#                                    Verbatim('DROP TABLE t'))
+#         
+#         
+#     def testInsert(self):
+#         self.createtransaction.add(self.sqlinsert)
+#         print(str(repr(self.createtransaction)))
+#         self.createtransaction.run()
         
 #         
 #     def testSelect(self):
@@ -71,11 +81,11 @@ class Test(unittest.TestCase):
 #         self.sqlobj.select('SELECT x, y, z FROM t WHERE y = 9999', ())
 #         self.sqlobj.delete('DELETE FROM t WHERE x = 5', ())
         
+    def testNothing(self):
+        pass
         
     def tearDown(self):
-        self.createtransaction.clear()
-        vbmsql = Verbatim('DROP TABLE t;')
-#         self.createtransaction.add(vbmsql)
+        self.createtransaction.add(Verbatim('DROP TABLE t'))
 #         self.createtransaction.run()
 
 if __name__ == "__main__":

@@ -217,6 +217,7 @@ class SqlAdapter(object):
                 
             if len(self.tobjects) == 0:
                 raise EmptyTransactionException('No objects to execute')
+            # Ensure each object is compatible
             for tobj in self.tobjects:
                 if not isinstance(tobj, Sql):
                     raise InvalidSquallObjectException('{} is invalid'.format(
