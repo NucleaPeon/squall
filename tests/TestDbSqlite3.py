@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
 from squall import *
+from squallerrors import *
 import squallsql
 
 class Test(unittest.TestCase):

@@ -4,6 +4,7 @@
 # Author: Daniel Kettle
 # Date:   July 25 2013
 #
+from collections.abc import Iterable
 
 __all__ = ['Sql', 'Drop', 'Create', 'Select', 'Insert', 'Update', 'Delete', 'Condition',
            'Where', 'WhereIn', 'Having', 'Exists', 'Order',
@@ -534,6 +535,67 @@ class Value(Sql):
 #         elif isinstance(self.value, str):
 #             return "'{}'".format(self.value)
 #         return "{}: {}".format(self.value, type(self.value))
+    
+class Type(Sql):
+    '''
+    :Description:
+        Defines a specific type for the database to recognize
+        
+        If a Type object is not specified, the python variable instancetype 
+        is used instead.
+    '''
+    def __init__(self, typename, *args, **kwargs):
+        self.typename = typename
+   
+    def __repr__(self):
+        return '{}'.format(self.typename)
+    
+class Key(Sql):
+    '''
+    :Description:
+        Defines an attribute of a field column specified in the
+        Table() object.
+    '''
+    def __init__(self):
+        pass
+        
+class PrimaryKey(Key):
+    '''
+    :Description:
+        Defines a field as the primary key of the table
+        
+    :Parameters:
+        - field:
+        - order:
+        
+        FIXME: Not implemented
+    '''
+    def __init__(self, field, order='', *args, **kwargs):
+        # Field must be a list in case of primary key with 2 or more fields
+        self.field = field
+        if not isinstance(field, list):
+            self.field = [field]
+            
+        self.order = order
+        if not self.order in ['ASC', 'DESC']:
+            self.order = '' 
+    
+    def __repr__(self):
+        return '{} {}'.format(self.field, self.order)
+    
+class ForeignKey(Key):
+    '''
+    :Description:
+        Defines a table and corresponding field to be a Foreign Key
+        
+        FIXME: Not implemented
+    '''
+    
+    def __init__(self, table, field, *args, **kwargs):
+        self.table = table
+        self.field = field
+        
+    
     
 class Table(Sql):
     '''

@@ -28,6 +28,7 @@ class Test(unittest.TestCase):
     sqlupdate = Update(Table('t'), Fields('y', 'z'), 
                                           (Value(5), Value(9)),
                                           condition=Where('x', '=', Value(1)))
+    sqlcreate = Create(Table('t'), Fields('x', 'y', 'z'))
     
 
     def setUp(self):
@@ -41,6 +42,7 @@ class Test(unittest.TestCase):
         self.createtransaction.add(vobj)
         assert not self.createtransaction is None, 'Transaction object is None'
         print(vobj)
+        print()
         self.createtransaction.run()
         
 #     def testDropAndCreate(self):
