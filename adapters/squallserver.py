@@ -337,12 +337,8 @@ class SqlAdapter(object):
                 # during transaction
                 self.tpreamble = '{}\n{}'.format(self.rollbackstring, 
                                                  self.tpreamble)
-            self.cmds = self.tpreamble
             self.output = {}
             # Tried using a generator, the generator got added
-            for x in self.tobjects:
-                self.cmds.append(str(x))
-            self.cmds.append(self.tsuffix)
             
         def add(self, *args):
             '''
@@ -437,7 +433,14 @@ class SqlAdapter(object):
             
             
         def __repr__(self):
-            return '\n'.join(self.cmds)
+            ret = []
+            ret.extend(self.tpreamble)
+            
+            # Append statements here
+            ret.extend(str(x) for x in self.tobjects)
+            
+            ret.append(self.tsuffix)
+            return '\n'.join(ret)
 
     
 class Create(Sql):

@@ -41,21 +41,19 @@ class Test(unittest.TestCase):
         vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
         self.createtransaction.add(vobj)
         assert not self.createtransaction is None, 'Transaction object is None'
-        print(vobj)
-        print()
         self.createtransaction.run()
         
-#     def testDropAndCreate(self):
-#         self.createtransaction.clear()
-#         self.createtransaction.add(Verbatim('CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x)))'),
-#                                    Verbatim('DROP TABLE t'))
-#         
-#         
-#     def testInsert(self):
-#         self.createtransaction.add(self.sqlinsert)
-#         print(str(repr(self.createtransaction)))
-#         self.createtransaction.run()
+    def testDropAndCreate(self):
+        self.createtransaction.clear()
+        self.createtransaction.add(Verbatim('DROP TABLE t'),
+                                   Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))"""))
+        self.createtransaction.run()
+         
+    def testInsert(self):
+        self.createtransaction.add(self.sqlinsert)
         
+        print(str(self.createtransaction))
+        self.createtransaction.run()
 #         
 #     def testSelect(self):
 #         print("Test: Select Insert Statement")
@@ -92,6 +90,7 @@ class Test(unittest.TestCase):
         
     def tearDown(self):
         self.createtransaction.add(Verbatim('DROP TABLE t'))
+        self.sqlobj.Disconnect()
 #         self.createtransaction.run()
 
 if __name__ == "__main__":
