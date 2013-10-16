@@ -565,23 +565,14 @@ class PrimaryKey(Key):
         Defines a field as the primary key of the table
         
     :Parameters:
-        - field:
-        - order:
         
         FIXME: Not implemented
     '''
-    def __init__(self, field, order='', *args, **kwargs):
-        # Field must be a list in case of primary key with 2 or more fields
-        self.field = field
-        if not isinstance(field, list):
-            self.field = [field]
-            
-        self.order = order
-        if not self.order in ['ASC', 'DESC']:
-            self.order = '' 
+    def __init__(self, order='', *args, **kwargs):
+        pass
     
     def __repr__(self):
-        return '{} {}'.format(self.field, self.order)
+        return 'PRIMARY KEY'
     
 class ForeignKey(Key):
     '''
@@ -607,6 +598,12 @@ class Table(Sql):
         
     def __repr__(self):
         return str(self.table)
+    
+class Field(Sql):
+    '''
+    :Description:
+        Wrapper around column name with data type and Key() data
+    '''
     
 class Fields(Sql):
     '''

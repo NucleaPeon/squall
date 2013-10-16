@@ -44,9 +44,13 @@ class SqlAdapter(object):
            'Value' : squall.Value,
            'Table' : squall.Table,
            'Fields' : squall.Fields,
+           'Field' : squall.Field,
            'Group' : squall.Group,
            'Having' : squall.Having,
-           'Verbatim' : squall.Verbatim
+           'Verbatim' : squall.Verbatim,
+           'Key' : squall.Key,
+           'PrimaryKey' : squall.PrimaryKey,
+           'ForeignKey' : squall.ForeignKey
     }
     # - End SQL Specific Definitions
     

@@ -24,7 +24,7 @@ There are actually two or three SQL Server drivers written and distrubuted by Mi
 import sys, os
 sys.path.append(os.path.join('..'))
 
-from squall import Sql, Verbatim, Select, Condition
+from squall import Sql, Verbatim, Select, Condition, Field
 from squallerrors import *
 import pyodbc
 import datetime as dt
@@ -299,6 +299,51 @@ class SqlAdapter(object):
             
             ret.append(self.tsuffix)
             return '\n'.join(ret)
+        
+    class Fields(Sql):
+        '''
+        :Description:
+            Fields is an object that is a collection of one or more Field() 
+            objects or column-name strings. 
+        '''
+        
+        def __init__(self, *args, **kwargs):
+            self.fields = args
+            
+        def __repr__(self):
+            return '{}'.format(', '.join(str(x) for x in self.fields))
+        
+    class Field(Sql):
+        '''
+        :Description:
+            Field is an object that contains the column name, the type, and
+            any associated Key() objects. Used mainly in the context of
+            Create() objects, not other Sql objects although if colname is
+            the only parameter specified, it works.
+            
+        :Parameters:
+            Required
+            - colname; string: Name of the column.
+            Optional 
+            - kwargs:
+                - datatype; string: Name of Data Type that SQL database supports
+                - key; Key(): Primary Key or Foreign Key objects
+                - nullable; bool: Whether field can be null or not null
+        '''
+        
+        def __init__(self, colname, *args, datatype=None, key=None, 
+                     nullable=True, **kwargs):
+            self.colname = colname
+            self.datatype = datatype
+            self.key = key
+            self.null = nullable
+        
+        def __repr__(self):
+            null = ' NULL' if self.null == True else ' NOT NULL'
+            datatype = ' {}'.format(self.datatype) if self.datatype else ''
+            key = ' {}'.format(str(self.key)) if self.key else ''
+            return '{}{}{}{}'.format(self.colname, datatype, 
+                                    null, key)
         
     class Value(Sql):
         '''

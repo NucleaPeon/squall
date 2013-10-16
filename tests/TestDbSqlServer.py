@@ -33,9 +33,17 @@ class Test(unittest.TestCase):
         assert not self.sqlobj is None, 'squallserver not imported correctly or invalid' 
         self.createtransaction = self.sqlobj.Transaction()
         assert not self.createtransaction is None, 'Transaction object not instantiated'
-        create = squall.Create("test", squall.Fields('x', 'y', 'z'), []);
+        fieldx = self.sqlobj.SQL.get('Field')('x', datatype='INTEGER', 
+                                              nullable=False, 
+                                              key=self.sqlobj.SQL.get("PrimaryKey")())
+        fieldy = self.sqlobj.SQL.get('Field')('y', datatype='INTEGER')
+        fieldz = self.sqlobj.SQL.get('Field')('z', datatype='INTEGER')
+        create = squall.Create(self.sqlobj.SQL.get('Table')("test"), 
+                               self.sqlobj.SQL.get('Fields')(fieldx, fieldy, fieldz), []);
+        print(str(create))
         # Create database
-#         print(self.sqlobj.Verbatim(str(create)))
+        print(self.sqlobj.sql(str(create)))
+        print(self.sqlobj.Commit())
         
     def testSqlServerValue(self):
         value = self.sqlobj.SQL['Value'](10) # Test value
@@ -48,12 +56,9 @@ class Test(unittest.TestCase):
     def testCreateDatabase(self):
         create = squall.Create("test", squall.Fields('x', 'y', 'z'), []);
         
-        print(create)
-        
     
     def testDropDatabase(self):
         drop = squall.Drop("test")
-        print(drop)
          
 #         self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
         #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
