@@ -182,8 +182,8 @@ class Create(Sql):
         self.constraints = constraints
         
     def __repr__(self):
-        return 'CREATE TABLE {}({}, {})'.format(self.table, 
-                                            ', '.join(self.fields),
+        return 'CREATE TABLE {}({}{})'.format(self.table, 
+                                            self.fields,
                                             ', '.join(self.constraints))
     
 

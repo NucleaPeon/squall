@@ -14,29 +14,47 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '..', 'adapters'))
 
 import unittest
-from squall import *
 import squallsql as sql
-import squallserver as sqlserver
+import squall
+import squallserver
 
 class Test(unittest.TestCase):
 
-    sqlobj = sql.SqlAdapter(driver='squallserver')
-    createtransaction = None
-    sqlselect = Select(Table('t'), Fields('*'), condition=Where('x', '=', Value(1)))
-    sqlinsert = Insert(Table('t'), Fields(), [Value(2), Value(2), Value(3)])
-    sqldelete = Delete(Table('t'), condition=Where('x', '=', Value(1)))
-    sqlupdate = Update(Table('t'), Fields('y', 'z'), 
-                                          (Value(5), Value(9)),
-                                          condition=Where('x', '=', Value(1)))
-    sqlcreate = Create(Table('t'), Fields('x', 'y', 'z'))
-    
+    sqlobj = None
 
-    def setUp(self):
-        self.sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
-                               'trusted':True, 'driver':'SQL Server'})
-        self.createtransaction = self.sqlobj.Transaction()
+    @classmethod
+    def setUpClass(cls):
+        cls.sqlobj = sql.SqlAdapter(driver='squallserver')
+        cls.sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
+                               'trusted':True, 'driver':'SQL Server',
+                               'database':'master'})
+
+    def setUp(self):        
         assert not self.sqlobj is None, 'squallserver not imported correctly or invalid' 
-        assert not self.createtransaction is None, 'Transaction object not instantiated' 
+        self.createtransaction = self.sqlobj.Transaction()
+        assert not self.createtransaction is None, 'Transaction object not instantiated'
+        create = squall.Create("test", squall.Fields('x', 'y', 'z'), []);
+        # Create database
+#         print(self.sqlobj.Verbatim(str(create)))
+        
+    def testSqlServerValue(self):
+        value = self.sqlobj.SQL['Value'](10) # Test value
+        self.assertTrue(isinstance(value, squallserver.SqlAdapter.Value), 'Not the desired Value object')
+        
+        value = self.sqlobj.SQL.get('Value')(10, forcetype='INTEGER', null=True)
+        self.assertEqual(str(value), "10 INTEGER NULL", 
+                         'SqlServer Value got unexpected value {}'.format(value))
+        
+    def testCreateDatabase(self):
+        create = squall.Create("test", squall.Fields('x', 'y', 'z'), []);
+        
+        print(create)
+        
+    
+    def testDropDatabase(self):
+        drop = squall.Drop("test")
+        print(drop)
+         
 #         self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
         #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
 #         vobj = Verbatim("CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))")
@@ -50,9 +68,14 @@ class Test(unittest.TestCase):
 #                                    Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))"""))
 #         self.createtransaction.run()
          
-    def testInsert(self):
-        self.createtransaction.add(self.sqlinsert)
-        self.createtransaction.run()
+#     def testInsert(self):
+#         print(self.Insert(self.Table('t'), 
+#                                                self.Fields(), 
+#                                                [self.Value(2), self.Value(2), self.Value(3)]))
+#         self.createtransaction.add(self.Insert(self.Table('t'), 
+#                                                self.Fields(), 
+#                                                [self.Value(2), self.Value(2), self.Value(3)]))
+#         self.createtransaction.run()
 #         
 #     def testSelect(self):
 #         print("Test: Select Insert Statement")
@@ -81,16 +104,20 @@ class Test(unittest.TestCase):
 #         self.sqlobj.select('SELECT x, y, z FROM t WHERE y = 9999', ())
 #         self.sqlobj.delete('DELETE FROM t WHERE x = 5', ())
         
-    def testConditionExists(self):
-        notcondition = sqlserver.Exists(exists=False)
-        self.assertEqual('IF NOT EXISTS', str(repr(notcondition)), 'Condition does not match up with expected string')
-        condition = sqlserver.Exists(exists=True)
-        self.assertEqual('IF EXISTS', str(repr(condition)), 'Condition does not match up with expected string')
+#     def testConditionExists(self):
+#         notcondition = self.Exists(exists=False)
+#         self.assertEqual('IF NOT EXISTS', str(repr(notcondition)), 'Condition does not match up with expected string')
+#         condition = self.Exists(exists=True)
+#         self.assertEqual('IF EXISTS', str(repr(condition)), 'Condition does not match up with expected string')
         
     def tearDown(self):
-#         self.createtransaction.add(Verbatim('DROP TABLE t'))
-#         self.createtransaction.run()
-        pass
+        self.createtransaction.clear()
+        drop = squall.Drop("test")
+        # Drop database
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sqlobj.Disconnect()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

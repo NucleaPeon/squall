@@ -27,6 +27,7 @@ sys.path.append(os.path.join('..'))
 from squall import Sql, Verbatim, Select, Condition
 from squallerrors import *
 import pyodbc
+import datetime as dt
 
 class SqlAdapter(object):
     '''
@@ -66,7 +67,15 @@ class SqlAdapter(object):
         '''
         self.database = kwargs.get('database', 'master') 
         
-        
+    def sql_compat(self, sql, param=()):
+        '''
+        Compatibility (temporary) sql method to force return of rows in 
+        the execute call. 
+        No transaction capabilities in this method.
+        '''
+        self.cursor.execute(sql, param)
+        return self.cursor.fetchall()
+            
     def connect(self, *args, **kwargs):
         '''
         :Parameters:
@@ -113,7 +122,6 @@ class SqlAdapter(object):
         conn_str = ';'.join(self.connection_str)
         self.conn = pyodbc.connect(conn_str)
         self.cursor = self.conn.cursor()
-        print(self.Table)
 
 #     
     def disconnect(self):
@@ -122,156 +130,6 @@ class SqlAdapter(object):
             Disconnect the driver from the database.
         '''
         self.conn.close()
-    
-    def insert(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        :Description:
-            Database Adapter insert->sql method with callbacks for
-            added functionality. This allows users to support logging
-            and additional commits.
-        
-        :See:
-            Transaction:
-                Since insert/update/delete require commit to perform, 
-                multiple methods can be placed into a transaction and
-                can all be commited at once.
-                
-                In order to utilize this functionality, callbacks are 
-                required. Use the postcallback() to return the sql string.
-            
-        :Parameters:
-            Parameters that are submitted to both callback methods are
-            as follows:
-            - method: this insert method is supplied
-            - module: this class so that multiple methods can be strung 
-              together
-              main non-query is submitted
-            - sql: this is the sql structure object or string that contains
-              the fields, tables and conditions for the statement
-            
-        :Returns:
-            - connection object
-        '''
-        if not precallback is None:
-            precallback(**{'method':self.insert, 'class':self, 
-                           'sql':sqlobject})
-        self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback(**{'method':self.insert, 'class':self, 
-                           'sql':sqlobject})
-        return self.conn
-    
-    def update(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        :Description:
-            Database Adapter update->sql method with callbacks for
-            added functionality. This allows users to support logging
-            and additional commits.
-        
-        :See:
-            Transaction:
-                Since insert/update/delete require commit to perform, 
-                multiple methods can be placed into a transaction and
-                can all be commited at once.
-                
-                In order to utilize this functionality, callbacks are 
-                required. Use the postcallback() to return the sql string.
-            
-        :Parameters:
-            Parameters that are submitted to both callback methods are
-            as follows:
-            - method: this insert method is supplied
-            - module: this class so that multiple methods can be strung 
-              together
-              main non-query is submitted
-            - sql: this is the sql structure object or string that contains
-              the fields, tables and conditions for the statement
-            
-        :Returns:
-            - connection object
-        '''
-        if not precallback is None:
-            precallback()
-        self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback()
-        return self.conn
-        
-    def select(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        :Description:
-            Database Adapter insert->sql method with callbacks for
-            added functionality. This allows users to support logging
-            and additional commits.
-        
-        :See:
-            Transaction:
-                Since insert/update/delete require commit to perform, 
-                multiple methods can be placed into a transaction and
-                can all be commited at once.
-                
-                Selects don't normally require a transaction and nothing
-                is committed, but it is still recommended to use selects
-                in transaction objects.
-                
-                In order to utilize this functionality, callbacks are 
-                required. Use the postcallback() to return the sql string.
-            
-        :Parameters:
-            Parameters that are submitted to both callback methods are
-            as follows:
-            - method: this insert method is supplied
-            - module: this class so that multiple methods can be strung 
-              together
-              main non-query is submitted
-            - sql: this is the sql structure object or string that contains
-              the fields, tables and conditions for the statement
-            
-        :Returns:
-            - connection object
-        '''
-        if not precallback is None:
-            precallback()
-        self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback()
-        return self.conn
-        
-    def delete(self, sqlobject, precallback=None, postcallback=None):
-        '''
-        :Description:
-            Database Adapter delete->sql method with callbacks for
-            added functionality. This allows users to support logging
-            and additional commits.
-        
-        :See:
-            Transaction:
-                Since insert/update/delete require commit to perform, 
-                multiple methods can be placed into a transaction and
-                can all be commited at once.
-                
-                In order to utilize this functionality, callbacks are 
-                required. Use the postcallback() to return the sql string.
-            
-        :Parameters:
-            Parameters that are submitted to both callback methods are
-            as follows:
-            - method: this insert method is supplied
-            - module: this class so that multiple methods can be strung 
-              together
-              main non-query is submitted
-            - sql: this is the sql structure object or string that contains
-              the fields, tables and conditions for the statement
-            
-        :Returns:
-            - connection object
-        '''
-        if not precallback is None:
-            precallback()
-        self.sql(str(sqlobject))
-        if not postcallback is None:
-            postcallback()
-        return self.conn
     
     def sql(self, sql, param=()):
         '''
@@ -323,9 +181,9 @@ class SqlAdapter(object):
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             self.tname = kwargs.get("name", "Default Transaction")
 
-            self.tpreamble = ['USE {};'.format(kwargs.get('database',
-                                                          SqlAdapter().database)), 
-                              'BEGIN TRANSACTION {}'.format(self.tname)]
+#    ['USE {};'.format(kwargs.get('database',
+#    SqlAdapter().database)]
+            self.tpreamble = ['BEGIN TRANSACTION {}'.format(self.tname)]
             self.tobjects = []
             self.tobjects.extend(args)
             self.rollbackstring = 'SET xact_abort ON;'
@@ -442,102 +300,50 @@ class SqlAdapter(object):
             ret.append(self.tsuffix)
             return '\n'.join(ret)
         
-        
-    class Table(Sql):
+    class Value(Sql):
         '''
         :Description:
-            A class that represents a table name.
+            Value() is a way to ensure the database types are met.
+            I am making an executive decision to force database types
+            into native python types and vice versa.
+            Therefore, if you make a Select command using squall, in the
+            results it will return a pythonic date object (datetime module)
+            instead of a string. Likewise, when calling an Insert() object,
+            the value object should be a datetime object, which will get
+            converted to the appropriate string or methodcall by the database
+            adapter.
             
-            SqlServer-specific notes:
-                - Table retrieves the database so all Tables appear as
-                  "database.table", since using "USE table" will cause
-                  individual statements to error unless USE is appended
-                  to each one -- too much work, too much duplication.
-                  
-        :Parameters:
-            - kwargs: dict;
-                - database: string; override the database variable that 
-                  is retrieved from the SqlServer SqlAdapter() object
+            For instance: if type(value) == str in python,
+                output: \'\'\' 'value' \'\'\' (quoted)
+            
+            if type(value) == datetime in python, 
+                output: \'\'\'strftime('%Y-%m-%d %H:%M:%S', '2004-01-01 02:34:56')\'\'\'
+            
+            where '2004-01-01 02:34:56' is the output of a str(datetime) object type
         '''
-        def __init__(self, table, *args, **kwargs):
-            self.table = table
-            self.database = kwargs.get('database', SqlAdapter().database)
+        def __init__(self, val, *args, **kwargs):
+            '''
+            :Parameters:
+                - val: any type; Value() object is a container around this attribute 
+                - **kwargs; dict:
+                    - forcetype; string: SQL Server Data Type (INT, DATE, VARCHAR, etc. etc.)
+                      TODO: Dictionary with Type Values instead of manual entry
+                      (Use with Create() objects) 
+                    - null; bool or None: force NULL or NOT NULL attributes if True or False, 
+                      unless None is specified. Converts argument to a bool, so Integers can
+                      be used to specify whether NULL or NOT NULL.
+                      (Use with Create() objects)
+            '''
+            self.value = val
+            self.null = kwargs.get('null', None)
+            if not self.null is None:
+                self.null = bool(self.null)
+            self._type = kwargs.get('forcetype', '')
             
         def __repr__(self):
-            return "{}.{}".format(self.database, self.table)
-
-class Create(Sql):
-    '''
-    :Description:
-        Sql Object for creating Tables in the database
-        
-    :Parameters:
-        - table: Sql(); Table object
-        - fields: Sql(); Fields in the Table to create
-        - constraints: Sql(); Constraint object on a Field
-    
-    TODO: Implement exists in repr() for both drop and create
-    '''
-    
-    def __init__(self, table, fields, constraints = [], exists=None, **kwargs):
-        self.table = table
-        self.fields = fields
-        self.constraints = constraints
-        self.exists = exists
-        
-    def __repr__(self):
-        return "CREATE TABLE {}({}{})".format(self.table, 
-                                              ', '.join(self.fields),
-                                              ', '.join(self.constraints))
-        
-        
-class Drop(Sql):
-    '''
-    :Description:
-        Sql Object for dropping Tables in the database
-        
-    :Parameters:
-        - table: Sql(); Table object
-        
-    '''
-    
-    def __init__(self, table, exists=None, **kwargs):
-        self.table = table
-        self.exists = exists
-         
-    def __repr__(self):
-        return "DROP TABLE {}".format(self.table)
-    
-class Exists(Condition):
-    '''
-    :Description:
-        Sql Condition that determines whether statements should be run based 
-        on the existance of certain elements, such as a Table, Field or Value.
-        
-        SqlServer Exist conditions are executed in a query before the main
-        queries are executed like so:
-            - If [not] exists (...select...query...) [do statements here]
-            
-        Exist() for SqlServer objects expects that the Sql Statements
-        (Update(), Delete(), Select(), Insert(), Drop() and Create()) will
-        check for Exists() conditions specifically in their __repr__
-        methods and surround the statement properly. This is not like sqlite3
-        Exists which trails the sql statement.
-        
-    :Parameters:
-        - exists; bool: If True, check that condition exists, otherwise check
-                        its absence (using NOT keyword)
-        - conditions; Condition: Addition Condition objects for more precise
-                                 existential checking
-    '''
-    
-    
-    def __init__(self, exists=True, conditions = []):
-        self.exists = exists
-        self.conditions = conditions
-        
-    def __repr__(self):
-        ifnot = "NOT " if not self.exists else '' 
-        return "IF {}EXISTS".format(ifnot)
-    
+            null = ''
+            if not self.null is None:
+                null = ' NULL' if self.null == True else ' NOT NULL'
+            typ = ' ' + self._type if True else '' 
+            return '{}{}{}'.format(self.value, typ, null)
     
