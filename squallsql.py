@@ -27,25 +27,27 @@ class SqlAdapter(object):
     '''
     
     # - Begin SQL Specific Definitions
-    Select = squall.Select
-    Condition = squall.Condition
-    Drop = squall.Drop
-    Create = squall.Create
-    Union = squall.Union
-    Select = squall.Select
-    Insert = squall.Insert
-    Delete = squall.Delete
-    Update = squall.Update
-    Where = squall.Where
-    WhereIn = squall.Where
-    Order = squall.Order
-    Exists = squall.Exists
-    Value = squall.Value
-    Table = squall.Table
-    Fields = squall.Fields
-    Group = squall.Group
-    Having = squall.Having
-    Verbatim = squall.Verbatim
+    SQL = {
+           'Select' : squall.Select,
+           'Condition' : squall.Condition,
+           'Drop' : squall.Drop,
+           'Create' : squall.Create,
+           'Union' : squall.Union,
+           'Select' : squall.Select,
+           'Insert' : squall.Insert,
+           'Delete' : squall.Delete,
+           'Update' : squall.Update,
+           'Where' : squall.Where,
+           'WhereIn' : squall.Where,
+           'Order' : squall.Order,
+           'Exists' : squall.Exists,
+           'Value' : squall.Value,
+           'Table' : squall.Table,
+           'Fields' : squall.Fields,
+           'Group' : squall.Group,
+           'Having' : squall.Having,
+           'Verbatim' : squall.Verbatim
+    }
     # - End SQL Specific Definitions
     
     sqladapter = None
@@ -59,24 +61,18 @@ class SqlAdapter(object):
         if self.module is None:
             raise AdapterException()
         self.sqladapter = self.module.SqlAdapter(*args, **kwargs)
+        for sqlclass in self.SQL.keys():
+            if hasattr(self.module.SqlAdapter, str(sqlclass)):
+                self.SQL[sqlclass] = getattr(self.sqladapter, sqlclass)
+
+    # LIST ADAPTER METHODS
+    # Sql Methods can be called on a class.variable basis if class init'd
         
     def Connect(self, *args, **kwargs):
         return self.sqladapter.connect(*args, **kwargs)
     
     def Disconnect(self, *args, **kwargs):
         return self.sqladapter.disconnect(*args, **kwargs)
-    
-    def Select(self, *args, **kwargs):
-        return squall.Select(*args, **kwargs)
-        
-    def Update(self, *args, **kwargs):
-        return squall.Update(*args, **kwargs)
-    
-    def Delete(self, *args, **kwargs):
-        return squall.Delete(*args, **kwargs)
-    
-    def Insert(self, *args, **kwargs):
-        return squall.Insert(*args, **kwargs)
     
     def sql(self, *args, **kwargs):
         return self.sqladapter.sql(*args, **kwargs)

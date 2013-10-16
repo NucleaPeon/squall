@@ -22,7 +22,6 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.driver.Connect(database='rfid.db')
         assert not self.driver is None, 'Driver is not initialized'
-        assert not self.driver.sqladapter is None, 'Sql Adapter not initialized'
         trans = self.driver.Transaction() # Requires the sql() method
         # FIXME: Transaction should call squallsqlite3 driver which fills in adapter
         trans.add(Verbatim('CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC));'))
@@ -64,7 +63,7 @@ class Test(unittest.TestCase):
         trans.run()
          
     def testSqliteInsert(self):
-        self.sqlinsert = self.driver.Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
+        self.sqlinsert = Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])
         self.assertEqual(str(self.sqlinsert), 'INSERT INTO t VALUES (1, 2, 3)', 'Unexpected sql string from insert object')
         # TODO: Add non-committed insert, attempt select on it (expect fail), then insert and select (success)
           
@@ -80,10 +79,10 @@ class Test(unittest.TestCase):
         self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
         self.driver.Transaction(Update(Table('t'), Fields('y', 'z'), 
                                               (Value(5), Value(9)), 
-                                               Where('x', '=', Value(1)))).run()
+                                               condition=Where('x', '=', Value(1)))).run()
          
     def testSelectReturn(self):
-        t = self.driver.Transaction(self.driver.Insert(
+        t = self.driver.Transaction(Insert(
                 Table('t'), Fields(), [Value(1), Value(2), Value(3)]))
         sqlselect = Select(Table('t'), Fields('*'), Where('x', '=', Value(1)))
         t.add(sqlselect)
@@ -95,10 +94,10 @@ class Test(unittest.TestCase):
         assert not self.driver is None, 'SqlAdapter driver is None'
         
     def testLessThan(self):
-        output = self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
+        self.driver.Transaction(Insert(Table('t'), Fields(), [Value(1), Value(2), Value(3)])).run()
         select = Select(Table('t'), Fields('*'), Where('x', '<', Value(8)))
         output = self.driver.Transaction(select).run()
-        self.assertGreater(output[str(select)], 0, 'Select did not return rows')
+        self.assertGreater(len(output[str(repr(select))]), 0, 'Select did not return rows')
         
         
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ There are actually two or three SQL Server drivers written and distrubuted by Mi
 import sys, os
 sys.path.append(os.path.join('..'))
 
-from squall import *
+from squall import Sql, Verbatim, Select, Condition
 from squallerrors import *
 import pyodbc
 
@@ -33,6 +33,9 @@ class SqlAdapter(object):
     API for calling odbc (sql server)
     Expects the odbc module as module parameter
     '''
+
+    
+    
     
     _instance = None
     def __new__(self, *args, **kwargs):
@@ -92,9 +95,6 @@ class SqlAdapter(object):
         # self.cursor = self.conn.cursor()
         self.connection_str.append('DRIVER={{{}}}'.format(self.driver))
         self.db_host = kwargs.get('db_host', 'localhost')
-#         if not kwargs.get('db_name', None):
-#             raise AdapterException(
-#                 'Database not supplied to driver, cannot connect')
         self.database = kwargs.get('database', 'master')
         self.connection_str.append('DATABASE={}'.format(self.database))
         
@@ -113,6 +113,7 @@ class SqlAdapter(object):
         conn_str = ';'.join(self.connection_str)
         self.conn = pyodbc.connect(conn_str)
         self.cursor = self.conn.cursor()
+        print(self.Table)
 
 #     
     def disconnect(self):
@@ -321,10 +322,9 @@ class SqlAdapter(object):
         def __init__(self, *args, **kwargs):
             self.adapter = kwargs.get('adapter', SqlAdapter._instance)
             self.tname = kwargs.get("name", "Default Transaction")
-            if kwargs.get('db_name') is None:
-                self.tpreamble = ['BEGIN TRANSACTION {}'.format(self.tname)]
-            else:
-                self.tpreamble = ['USE {};'.format(kwargs.get('db_name')), 
+
+            self.tpreamble = ['USE {};'.format(kwargs.get('database',
+                                                          SqlAdapter().database)), 
                               'BEGIN TRANSACTION {}'.format(self.tname)]
             self.tobjects = []
             self.tobjects.extend(args)
@@ -417,14 +417,14 @@ class SqlAdapter(object):
                 if not isinstance(tobj, Sql):
                     raise InvalidSquallObjectException('{} is invalid'.format(
                         str(tobj)))
-                
+            
+            
+            # Of Sql() in transaction queue, get output of selects, run others
             for squallobj in self.tobjects:
                 if isinstance(squallobj, Select):
                     self.output[str(squallobj)] = self.adapter.sql_compat(str(squallobj))
                 else:
-                    self.adapter.sql(str(squallobj)) # This will raise a rollback exception 
-                # via sqlite3, so we don't have to check for this. Other db's will have
-                # to reimplement this.
+                    self.adapter.sql(str(squallobj))
             self.adapter.commit()
             
             if not kwargs.get('raise_exception') is None:
@@ -441,8 +441,31 @@ class SqlAdapter(object):
             
             ret.append(self.tsuffix)
             return '\n'.join(ret)
+        
+        
+    class Table(Sql):
+        '''
+        :Description:
+            A class that represents a table name.
+            
+            SqlServer-specific notes:
+                - Table retrieves the database so all Tables appear as
+                  "database.table", since using "USE table" will cause
+                  individual statements to error unless USE is appended
+                  to each one -- too much work, too much duplication.
+                  
+        :Parameters:
+            - kwargs: dict;
+                - database: string; override the database variable that 
+                  is retrieved from the SqlServer SqlAdapter() object
+        '''
+        def __init__(self, table, *args, **kwargs):
+            self.table = table
+            self.database = kwargs.get('database', SqlAdapter().database)
+            
+        def __repr__(self):
+            return "{}.{}".format(self.database, self.table)
 
-    
 class Create(Sql):
     '''
     :Description:

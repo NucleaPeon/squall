@@ -38,21 +38,20 @@ class Test(unittest.TestCase):
         assert not self.sqlobj is None, 'squallserver not imported correctly or invalid' 
         assert not self.createtransaction is None, 'Transaction object not instantiated' 
 #         self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
-        vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
-        self.createtransaction.add(vobj)
-        assert not self.createtransaction is None, 'Transaction object is None'
-        self.createtransaction.run()
-        
-    def testDropAndCreate(self):
-        self.createtransaction.clear()
-        self.createtransaction.add(Verbatim('DROP TABLE t'),
-                                   Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))"""))
-        self.createtransaction.run()
+        #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
+#         vobj = Verbatim("CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))")
+#         self.createtransaction.add(vobj)
+#         assert not self.createtransaction is None, 'Transaction object is None'
+#         self.createtransaction.run()
+#         
+#     def testDropAndCreate(self):
+#         self.createtransaction.clear()
+#         self.createtransaction.add(Verbatim('DROP TABLE t'),
+#                                    Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))"""))
+#         self.createtransaction.run()
          
     def testInsert(self):
         self.createtransaction.add(self.sqlinsert)
-        
-        print(str(self.createtransaction))
         self.createtransaction.run()
 #         
 #     def testSelect(self):
@@ -89,9 +88,9 @@ class Test(unittest.TestCase):
         self.assertEqual('IF EXISTS', str(repr(condition)), 'Condition does not match up with expected string')
         
     def tearDown(self):
-        self.createtransaction.add(Verbatim('DROP TABLE t'))
-        self.sqlobj.Disconnect()
+#         self.createtransaction.add(Verbatim('DROP TABLE t'))
 #         self.createtransaction.run()
+        pass
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
