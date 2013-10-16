@@ -40,10 +40,8 @@ class Test(unittest.TestCase):
         fieldz = self.sqlobj.SQL.get('Field')('z', datatype='INTEGER')
         create = squall.Create(self.sqlobj.SQL.get('Table')("test"), 
                                self.sqlobj.SQL.get('Fields')(fieldx, fieldy, fieldz), []);
-        print(str(create))
-        # Create database
-        print(self.sqlobj.sql(str(create)))
-        print(self.sqlobj.Commit())
+        self.sqlobj.sql(str(create))
+        self.sqlobj.Commit()
         
     def testSqlServerValue(self):
         value = self.sqlobj.SQL['Value'](10) # Test value
@@ -119,6 +117,8 @@ class Test(unittest.TestCase):
         self.createtransaction.clear()
         drop = squall.Drop("test")
         # Drop database
+        self.sqlobj.sql(str(drop))
+        self.sqlobj.Commit()
 
     @classmethod
     def tearDownClass(cls):
