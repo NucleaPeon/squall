@@ -19,12 +19,12 @@ https://github.com/NucleaPeon/squall/wiki
 Recent Activity
 ====
 
-Been moving classes around trying to get an easy-to-use setup.
-If I want functionality in classes that represent sql objects
-(Select, Insert, Where, Delete, etc.), I may have to add them
-to the driver module. 
-I am debating removing the class object of the SqlAdapter,
-putting it straight into the module.
+Working on allowing adapters to have their own specific versions
+of Sql objects. Primary Key and Create() objects work on sqlserver
+and many more objects such as Field() have been implemented on the
+same driver, with empty classes ported to squall.py.
+
+Lots of work to do still.
 
 Databases
 ====
