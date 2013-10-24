@@ -13,12 +13,7 @@ and ease of use.
 Recent Activity
 ====
 
-Been moving classes around trying to get an easy-to-use setup.
-If I want functionality in classes that represent sql objects
-(Select, Insert, Where, Delete, etc.), I may have to add them
-to the driver module. 
-I am debating removing the class object of the SqlAdapter,
-putting it straight into the module.
+Working on sqlserver branch
 
 Databases
 ====
