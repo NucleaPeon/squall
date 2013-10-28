@@ -28,19 +28,23 @@ class Test(unittest.TestCase):
         cls.sqlobj.Connect(**{'server':'localhost', 'adapter':'sqlserver', 
                                'trusted':True, 'driver':'SQL Server',
                                'database':'master'})
+        cls.fieldx = cls.sqlobj.SQL.get('Field')('x', datatype='INTEGER', 
+                                              nullable=False, 
+                                              key=cls.sqlobj.SQL.get("PrimaryKey")())
+        cls.fieldy = cls.sqlobj.SQL.get('Field')('y', datatype='INTEGER')
+        cls.fieldz = cls.sqlobj.SQL.get('Field')('z', datatype='INTEGER')
+        cls.fields = cls.sqlobj.SQL.get('Fields')(cls.fieldx, cls.fieldy, cls.fieldz)
+        cls.table = cls.sqlobj.SQL.get('Table')("test")
+        cls.create = squall.Create(cls.table, 
+                               cls.fields, []);
+        cls.drop = squall.Drop("test")
 
     def setUp(self):        
         assert not self.sqlobj is None, 'squallserver not imported correctly or invalid' 
         self.createtransaction = self.sqlobj.Transaction()
         assert not self.createtransaction is None, 'Transaction object not instantiated'
-        fieldx = self.sqlobj.SQL.get('Field')('x', datatype='INTEGER', 
-                                              nullable=False, 
-                                              key=self.sqlobj.SQL.get("PrimaryKey")())
-        fieldy = self.sqlobj.SQL.get('Field')('y', datatype='INTEGER')
-        fieldz = self.sqlobj.SQL.get('Field')('z', datatype='INTEGER')
-        create = squall.Create(self.sqlobj.SQL.get('Table')("test"), 
-                               self.sqlobj.SQL.get('Fields')(fieldx, fieldy, fieldz), []);
-        self.sqlobj.sql(str(create))
+        
+        self.sqlobj.sql(str(self.create))
         self.sqlobj.Commit()
         
     def testSqlServerValue(self):
@@ -51,14 +55,22 @@ class Test(unittest.TestCase):
         self.assertEqual(str(value), "10 INTEGER NULL", 
                          'SqlServer Value got unexpected value {}'.format(value))
         
-    def testCreateDatabase(self):
-        create = squall.Create("test", squall.Fields('x', 'y', 'z'), []);
+    def testTransaction(self):
+        self.createtransaction.add(self.drop)
+        self.createtransaction.add(self.create)
+        self.createtransaction.run()
         
-    
-    def testDropDatabase(self):
-        drop = squall.Drop("test")
+    def testExistsCondition(self):
+        exists = self.sqlobj.SQL.get('Exists')(False, """SELECT * FROM sys.tables WHERE name = 't'""", 
+                                               self.sqlobj.SQL.get('Create')(self.table, 
+                                                  self.fields))
+        print(exists)
+        self.createtransaction.add(exists)
+        self.createtransaction.run()
+        
+        
          
-#         self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
+        #self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
         #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
 #         vobj = Verbatim("CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))")
 #         self.createtransaction.add(vobj)
@@ -115,9 +127,8 @@ class Test(unittest.TestCase):
         
     def tearDown(self):
         self.createtransaction.clear()
-        drop = squall.Drop("test")
         # Drop database
-        self.sqlobj.sql(str(drop))
+        self.sqlobj.sql(str(self.drop))
         self.sqlobj.Commit()
 
     @classmethod

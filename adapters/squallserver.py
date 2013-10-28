@@ -391,4 +391,28 @@ class SqlAdapter(object):
                 null = ' NULL' if self.null == True else ' NOT NULL'
             typ = ' ' + self._type if True else '' 
             return '{}{}{}'.format(self.value, typ, null)
+        
+    class Exists(Sql):
+        
+        def __init__(self, exists, selector, statement, *args, Else=None):
+            '''
+            :Description:
+                The Exists() object is written in a more readable fashion and
+                acts similar to an if else statement.
+                
+            :Parameters:
+                - selector; string: A Select() or Table() object
+                - statement; Sql() Statement: Command to run if Exists 
+                - **kwargs:
+                    - Else: Sql() statement if exists bool equals False
+                    
+            '''
+            self.exists=True
+            self.selector = selector
+            self.statement = statement
+            
+        def __repr__(self):
+            exists = " " if self.exists else " NOT "
+            #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
+            return "IF{}EXISTS({}) {}".format(exists, self.selector, self.statement)
     
