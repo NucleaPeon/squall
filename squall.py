@@ -142,11 +142,11 @@ class Condition(Squall):
         if isinstance(value, Sql):
             if isinstance(value, Select):
                 self.value = "({})".format(str(value))
-            elif isinstance(value, Value):
+            elif "SqlAdapter.Value" in str(type(value)):
                 self.value = str(value)
             else:
-                raise InvalidSqlWhereClauseException(
-                    'Non-Queries not allowed in WHERE Clause') 
+                self.value = value
+            
         elif isinstance(value, str):
             self.value = value
         else:
@@ -256,7 +256,7 @@ class Insert(Sql):
             mf = '{}{}{}'.format(' (', mf, ')')
         return "INSERT INTO {}{} VALUES ({})".format(self.table, 
                                 mf,
-                                ', '.join(str(x) for x in self.values))
+                                ', '.join(str(x) for x in self.values).strip())
     
 class Delete(Sql):
     def __init__(self, table, **kwargs):

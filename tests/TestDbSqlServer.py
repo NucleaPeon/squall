@@ -49,9 +49,6 @@ class Test(unittest.TestCase):
         self.sqlobj.Commit()
         
     def testSqlServerValue(self):
-        value = self.sqlobj.SQL['Value'](10) # Test value
-        self.assertTrue(isinstance(value, squallserver.SqlAdapter.Value), 'Not the desired Value object')
-        
         value = self.sqlobj.SQL.get('Value')(10, forcetype='INTEGER', null=True)
         self.assertEqual(str(value), "10 INTEGER NULL", 
                          'SqlServer Value got unexpected value {}'.format(value))
@@ -85,14 +82,19 @@ class Test(unittest.TestCase):
         # --> Insert code
         Value = self.sqlobj.SQL.get("Value")
         fields = self.sqlobj.SQL.get("Fields")("x", "y", "z")
-        print(fields)
         testinsert = self.sqlobj.SQL.get("Insert")(self.table, fields, [Value(4),
                                                                         Value(3),
                                                                         Value(2)])
-        print(testinsert)
+        self.createtransaction.add(testinsert)
         # <-- End Insert code
-        #self.createtransaction.run()
-#         
+        self.createtransaction.run()
+        # Test Insert #
+        where = self.sqlobj.SQL.get("Where")('x', '=', Value(4))
+        select = self.sqlobj.SQL.get("Select")(self.table, fields, condition=where)
+        self.createtransaction.add(select)
+        retdata = self.createtransaction.run()[str(select)]
+        print(retdata)
+        
 #     def testSelect(self):
 #         print("Test: Select Insert Statement")
 #         # , self.sqlselect, self.sqldelete

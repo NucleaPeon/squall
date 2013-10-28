@@ -313,7 +313,7 @@ class SqlAdapter(object):
         def __repr__(self):
             return '{}'.format(', '.join(str(x) for x in self.fields))
         
-    class Field(Sql):
+    class Field(Condition):
         '''
         :Description:
             Field is an object that contains the column name, the type, and
@@ -344,6 +344,7 @@ class SqlAdapter(object):
             key = ' {}'.format(str(self.key)) if self.key else ''
             return '{}{}{}{}'.format(self.colname, datatype, 
                                     null, key)
+        
         
     class Value(Sql):
         '''
@@ -379,6 +380,8 @@ class SqlAdapter(object):
                       be used to specify whether NULL or NOT NULL.
                       (Use with Create() objects)
             '''
+            if isinstance(val, str):
+                val = """'{}'""".format(val)
             self.value = val
             self.null = kwargs.get('null', None)
             if not self.null is None:
