@@ -81,7 +81,7 @@ class Sql(Squall):
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
     def __init__(self, command='', table=None, field=None, 
-                 values=[], **kwargs):
+                 values=[], *args, **kwargs):
         
         super().__init__()
         condition = kwargs.get('condition', None)
@@ -232,8 +232,20 @@ class Select(Sql):
              self.fields, self.table, self.condition) 
         
 class Insert(Sql):
-    def __init__(self, table, field, values, **kwargs):
-        super().__init__('INSERT', table, field, values, **kwargs)
+    def __init__(self, table, field, values, *args, **kwargs):
+        '''
+        :Description:
+            Constructor for Insert Sql Objects
+        
+        :Parent:
+            Sql
+        
+        :Parameters:
+            - table; Table(): Sql Object with Table name
+            - fields; Fields(): Sql Object with column names
+            - values; list: List of Sql Value() Objects
+        '''
+        super().__init__('INSERT', table, field, values, *args, **kwargs)
         self.table = table
         self.field = field
         self.values = values

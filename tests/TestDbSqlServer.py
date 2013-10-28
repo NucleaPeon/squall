@@ -35,8 +35,9 @@ class Test(unittest.TestCase):
         cls.fieldz = cls.sqlobj.SQL.get('Field')('z', datatype='INTEGER')
         cls.fields = cls.sqlobj.SQL.get('Fields')(cls.fieldx, cls.fieldy, cls.fieldz)
         cls.table = cls.sqlobj.SQL.get('Table')("test")
-        cls.create = squall.Create(cls.table, 
-                               cls.fields, []);
+        cls.create = cls.sqlobj.SQL.get('Create')(cls.table, 
+                                                  cls.fields);
+                               
         cls.drop = squall.Drop("test")
 
     def setUp(self):        
@@ -62,13 +63,9 @@ class Test(unittest.TestCase):
         
     def testExistsCondition(self):
         exists = self.sqlobj.SQL.get('Exists')(False, """SELECT * FROM sys.tables WHERE name = 't'""", 
-                                               self.sqlobj.SQL.get('Create')(self.table, 
-                                                  self.fields))
-        print(exists)
+                                               self.create)
         self.createtransaction.add(exists)
         self.createtransaction.run()
-        
-        
          
         #self.createtransaction.add(Verbatim("SELECT * FROM sys.tables WHERE name = 't'"))
         #vobj = Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))""")
@@ -77,20 +74,24 @@ class Test(unittest.TestCase):
 #         assert not self.createtransaction is None, 'Transaction object is None'
 #         self.createtransaction.run()
 #         
-#     def testDropAndCreate(self):
-#         self.createtransaction.clear()
-#         self.createtransaction.add(Verbatim('DROP TABLE t'),
-#                                    Verbatim("""IF NOT EXISTS(SELECT * FROM sys.tables WHERE name = 't') CREATE TABLE t(x INTEGER, y INTEGER, z INTEGER, CONSTRAINT x_pk PRIMARY KEY(x))"""))
-#         self.createtransaction.run()
+    def testDropAndCreate(self):
+        self.createtransaction.clear()
+        self.createtransaction.add(self.drop, self.create)
+        self.createtransaction.run()
+        
          
-#     def testInsert(self):
-#         print(self.Insert(self.Table('t'), 
-#                                                self.Fields(), 
-#                                                [self.Value(2), self.Value(2), self.Value(3)]))
-#         self.createtransaction.add(self.Insert(self.Table('t'), 
-#                                                self.Fields(), 
-#                                                [self.Value(2), self.Value(2), self.Value(3)]))
-#         self.createtransaction.run()
+    def testInsert(self):
+        self.createtransaction.clear()
+        # --> Insert code
+        Value = self.sqlobj.SQL.get("Value")
+        fields = self.sqlobj.SQL.get("Fields")("x", "y", "z")
+        print(fields)
+        testinsert = self.sqlobj.SQL.get("Insert")(self.table, fields, [Value(4),
+                                                                        Value(3),
+                                                                        Value(2)])
+        print(testinsert)
+        # <-- End Insert code
+        #self.createtransaction.run()
 #         
 #     def testSelect(self):
 #         print("Test: Select Insert Statement")
