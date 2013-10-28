@@ -259,13 +259,13 @@ class Insert(Sql):
                                 ', '.join(str(x) for x in self.values).strip())
     
 class Delete(Sql):
-    def __init__(self, table, **kwargs):
+    def __init__(self, table, *args, **kwargs):
         '''
         :Parameters:
             - **kwargs; dict
                 - condition; Where object
         '''
-        super().__init__('DELETE', table, condition=kwargs.get('condition'))
+        super().__init__('DELETE', table, *args, condition=kwargs.get('condition'))
         self.table = table
         if isinstance(kwargs.get('condition'), Where):
             self.condition = kwargs.get('condition')
@@ -276,8 +276,8 @@ class Delete(Sql):
         return "DELETE FROM {} {}".format(self.table, self.condition)
         
 class Update(Sql):
-    def __init__(self, table, field, values, **kwargs):
-        super().__init__('UPDATE', table, field, values,
+    def __init__(self, table, field, values, *args, **kwargs):
+        super().__init__('UPDATE', table, field, values, *args,
                          condition=kwargs.get('condition', None))
         self.table = table
         self.field = field

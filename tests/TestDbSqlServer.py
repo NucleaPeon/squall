@@ -17,6 +17,7 @@ import unittest
 import squallsql as sql
 import squall
 import squallserver
+from squallerrors import *
 
 class Test(unittest.TestCase):
 
@@ -77,7 +78,7 @@ class Test(unittest.TestCase):
         self.createtransaction.run()
         
          
-    def testInsert(self):
+    def testInsertAndSelect(self):
         self.createtransaction.clear()
         # --> Insert code
         Value = self.sqlobj.SQL.get("Value")
@@ -93,33 +94,35 @@ class Test(unittest.TestCase):
         select = self.sqlobj.SQL.get("Select")(self.table, fields, condition=where)
         self.createtransaction.add(select)
         retdata = self.createtransaction.run()[str(select)]
-        print(retdata)
+        self.assertGreater(len(retdata), 0, 'Failed to retrieve inserted data')
         
-#     def testSelect(self):
-#         print("Test: Select Insert Statement")
-#         # , self.sqlselect, self.sqldelete
-#         
-#         #sqltran = tsql.Transaction(self.sqlobj, self.sqlinsert)
-#         print(self.sqlselect)
-#  
-#     def testInsertAndDelete(self):
-#         print("Test: Inserting test data into t table")
-#         self.createtransaction.clear()
-#         self.assertRaises(EmptyTransactionException, self.createtransaction.run)
-#         self.createtransaction.add(self.sqlinsert, self.sqlselect, self.sqldelete)
-#         print("Test: Selecting data we inserted")
-#         self.createtransaction.run()
-#  
-#     def testUpdate(self):
-#         self.createtransaction.clear()
-#         self.createtransaction.add(self.sqlobj, self.sqlinsert, self.sqlupdate)
-#         newselect = Select(Table('t'), Fields('*'), Where('z', '=', Value(9)))
-#         self.createtransaction.add(newselect, self.sqldelete)
-#         self.createtransaction.run()
-#         
+  
+    def testInsertAndDelete(self):
+        self.createtransaction.clear()
+        self.assertRaises(EmptyTransactionException, self.createtransaction.run)
+        Value = self.sqlobj.SQL.get("Value")
+        fields = self.sqlobj.SQL.get("Fields")("x", "y", "z")
+        testinsert = self.sqlobj.SQL.get("Insert")(self.table, fields, [Value(4),
+                                                                        Value(3),
+                                                                        Value(2)])
+        self.createtransaction.add(testinsert)
+        self.createtransaction.run()
+        where = self.sqlobj.SQL.get("Where")('x', '=', Value(4))
+        testdelete = self.sqlobj.SQL.get("Delete")(self.table, 
+                                                   condition=where)
+        self.createtransaction.add(testdelete)
+        self.createtransaction.run()
+  
+    def testUpdate(self):
+        testupdate = self.sqlobj.SQL.get('Update')()
+        self.createtransaction.add(testupdate)
+         
 #         self.sqlobj.insert('INSERT INTO t (x, y, z) VALUES (?, ?, ?)', (5, 4, 3))
 #         self.sqlobj.update('UPDATE t SET y = ? WHERE x = ?', (9999, 5))
 #         self.sqlobj.select('SELECT x, y, z FROM t WHERE y = 9999', ())
+        
+    def testExistsRow(self):
+        pass
 #         self.sqlobj.delete('DELETE FROM t WHERE x = 5', ())
         
 #     def testConditionExists(self):
