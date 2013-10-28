@@ -258,7 +258,7 @@ class Delete(Sql):
             - **kwargs; dict
                 - condition; Where object
         '''
-        super().__init__('DELETE', table, *args, condition=kwargs.get('condition', ''))
+        super().__init__('DELETE', table, *args, condition=kwargs.get('condition', None))
         self.table = table
         self.condition = kwargs.get('condition', '')
         
@@ -268,7 +268,7 @@ class Delete(Sql):
 class Update(Sql):
     def __init__(self, table, fields, values, *args, **kwargs):
         super().__init__('UPDATE', table, fields, values, *args,
-                         condition=kwargs.get('condition', ''))
+                         condition=kwargs.get('condition', None))
         self.table = table
         self.field = fields
         self.values = values
