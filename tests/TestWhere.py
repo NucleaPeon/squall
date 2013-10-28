@@ -5,7 +5,7 @@ Created on 2013-08-19
 '''
 import unittest
 
-from squall import Where, Value, Order, Fields
+from squall import *
 class Test(unittest.TestCase):
 
     where = None

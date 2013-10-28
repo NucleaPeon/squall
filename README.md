@@ -10,6 +10,12 @@ As with most object-oriented platforms, you can expect to see a
 slight performance hit in exchange for the additional functionality
 and ease of use.
 
+
+How to use this software
+----
+See the GitHub wiki page for getting database adapters to work:
+https://github.com/NucleaPeon/squall/wiki
+
 Recent Activity
 ====
 
@@ -38,6 +44,9 @@ Functionality that must be sustained:
 * DROP
 * CREATE
 * WHERE
+* HAVING
+* ORDER
+* 
 
 This software aims to be a solid single-threaded application first and 
 foremost. Multi-threading can be implemented at a later date.

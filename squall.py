@@ -3,6 +3,18 @@
 # Author: Daniel Kettle
 # Date:   July 25 2013
 #
+from collections.abc import Iterable
+
+__all__ = ['Sql', 'Drop', 'Create', 'Select', 'Insert', 'Update', 'Delete', 'Condition',
+           'Where', 'WhereIn', 'Having', 'Exists', 'Order',
+           'Table', 'Fields', 'Value', 'Group', 'Verbatim']
+
+# Only import what we need
+import datetime as dt
+from squallerrors import InvalidSqlCommandException, InvalidSqlConditionException, \
+                         InvalidSqlWhereClauseException, InvalidSqlValueException, \
+                         InvalidDistinctFieldFormat
+
 
 ADAPTERS = {'sqlite3' : None,
             'sqlserver': None, # Uses odbc drivers
@@ -10,7 +22,6 @@ ADAPTERS = {'sqlite3' : None,
             'postgres': None,
             'firebird': None}
 
-import datetime as dt
 
 class Squall():
     '''
@@ -25,7 +36,7 @@ class Squall():
     '''
     def __init__(self):
         pass
-
+    
 class Sql(Squall):
     '''
     :Description:
@@ -68,14 +79,16 @@ class Sql(Squall):
     '''
     COMMANDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP']
     
-    def __init__(self, command, **kwargs):
+    def __init__(self, command='', table=None, field=None, 
+                 values=[], *args, **kwargs):
         super().__init__()
         self.command = Command(command)
         self.precallback = kwargs.get('precallback')
         self.postcallback = kwargs.get('postcallback')
-        if not str(self.command) in self.COMMANDS:
+        if not str(self.command) in self.COMMANDS or \
+           self.command == '':
             raise InvalidSqlCommandException(
-                'Command {} is not a valid command to issue'.format(
+                'Command <{}> is not a valid command to issue'.format(
                     str(command)))
             
         self.table = kwargs.get('table', None)
@@ -124,11 +137,11 @@ class Condition(Squall):
         if isinstance(value, Sql):
             if isinstance(value, Select):
                 self.value = "({})".format(str(value))
-            elif isinstance(value, Value):
+            elif "SqlAdapter.Value" in str(type(value)):
                 self.value = str(value)
             else:
-                raise InvalidSqlWhereClauseException(
-                    'Non-Queries not allowed in WHERE Clause') 
+                self.value = value
+            
         elif isinstance(value, str):
             self.value = value
         else:
@@ -164,8 +177,8 @@ class Create(Sql):
         self.constraints = constraints
         
     def __repr__(self):
-        return 'CREATE TABLE {}({}, {})'.format(self.table, 
-                                            ', '.join(self.fields),
+        return 'CREATE TABLE {}({}{})'.format(self.table, 
+                                            self.fields,
                                             ', '.join(self.constraints))
     
 
@@ -176,7 +189,6 @@ class Union(Sql):
         :Description:
             Concats 
         '''
-        
         
 
 class Select(Sql):
@@ -213,8 +225,20 @@ class Select(Sql):
              self.fields, self.table, self.condition) 
         
 class Insert(Sql):
-    def __init__(self, table, field, values, **kwargs):
-        super().__init__('INSERT', table=table, fields=field, values=values, **kwargs)
+    def __init__(self, table, field, values, *args, **kwargs):
+        '''
+        :Description:
+            Constructor for Insert Sql Objects
+        
+        :Parent:
+            Sql
+        
+        :Parameters:
+            - table; Table(): Sql Object with Table name
+            - fields; Fields(): Sql Object with column names
+            - values; list: List of Sql Value() Objects
+        '''
+        super().__init__('INSERT', table, field, values, *args, **kwargs)
         self.table = table
         self.field = field
         self.values = values
@@ -225,30 +249,30 @@ class Insert(Sql):
             mf = '{}{}{}'.format(' (', mf, ')')
         return "INSERT INTO {}{} VALUES ({})".format(self.table, 
                                 mf,
-                                ', '.join(str(x) for x in self.values))
+                                ', '.join(str(x) for x in self.values).strip())
     
 class Delete(Sql):
-    def __init__(self, table, condition='', **kwargs):
+    def __init__(self, table, *args, **kwargs):
         '''
         :Parameters:
             - **kwargs; dict
                 - condition; Where object
         '''
-        super().__init__('DELETE', table=table, condition=condition)
+        super().__init__('DELETE', table, *args, condition=kwargs.get('condition', None))
         self.table = table
-        self.condition = condition
+        self.condition = kwargs.get('condition', '')
         
     def __repr__(self):
         return "DELETE FROM {} {}".format(self.table, self.condition)
         
 class Update(Sql):
-    def __init__(self, table, field, values, condition='', **kwargs):
-        super().__init__('UPDATE', table=table, field=field, values=values,
-                         condition=condition, **kwargs)
-        self.condition = condition
+    def __init__(self, table, fields, values, *args, **kwargs):
+        super().__init__('UPDATE', table, fields, values, *args,
+                         condition=kwargs.get('condition', None))
         self.table = table
-        self.field = field
+        self.field = fields
         self.values = values
+        self.condition = kwargs.get('condition', '')
         
     def __parse_values(self, field, value):
         return "{} = {}".format(field, value)
@@ -267,7 +291,7 @@ class Update(Sql):
                         len(self.values)))
             return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
         for i in range(0, len(self.values)):
-            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
+            params.append(self.__parse_values(self.field.fields[i], self.values[i]).strip())
         
         return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)      
      
@@ -511,6 +535,58 @@ class Value(Sql):
 #             return "'{}'".format(self.value)
 #         return "{}: {}".format(self.value, type(self.value))
     
+class Type(Sql):
+    '''
+    :Description:
+        Defines a specific type for the database to recognize
+        
+        If a Type object is not specified, the python variable instancetype 
+        is used instead.
+    '''
+    def __init__(self, typename, *args, **kwargs):
+        self.typename = typename
+   
+    def __repr__(self):
+        return '{}'.format(self.typename)
+    
+class Key(Sql):
+    '''
+    :Description:
+        Defines an attribute of a field column specified in the
+        Table() object.
+    '''
+    def __init__(self):
+        pass
+        
+class PrimaryKey(Key):
+    '''
+    :Description:
+        Defines a field as the primary key of the table
+        
+    :Parameters:
+        
+        FIXME: Not implemented
+    '''
+    def __init__(self, order='', *args, **kwargs):
+        pass
+    
+    def __repr__(self):
+        return 'PRIMARY KEY'
+    
+class ForeignKey(Key):
+    '''
+    :Description:
+        Defines a table and corresponding field to be a Foreign Key
+        
+        FIXME: Not implemented
+    '''
+    
+    def __init__(self, table, field, *args, **kwargs):
+        self.table = table
+        self.field = field
+        
+    
+    
 class Table(Sql):
     '''
     :Description:
@@ -521,6 +597,12 @@ class Table(Sql):
         
     def __repr__(self):
         return str(self.table)
+    
+class Field(Sql):
+    '''
+    :Description:
+        Wrapper around column name with data type and Key() data
+    '''
     
 class Fields(Sql):
     '''
@@ -634,59 +716,3 @@ class Verbatim(Sql):
         
     def __repr__(self):
         return "{}".format(self.sql)
-    
-    
-### Exceptions ###
-
-    
-class AdapterException(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        
-class MissingDatabaseAdapterException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlCommandException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlValueException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlWhereClauseException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSqlConditionException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class EmptyTransactionException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-
-class RollbackException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class CommitException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidSquallObjectException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidDatabaseNameException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class InvalidDistinctFieldFormat(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
-        
-class NotImplementedException(AdapterException):
-    def __init__(self, message):
-        AdapterException.__init__(self, message)
