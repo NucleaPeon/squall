@@ -65,6 +65,8 @@ class SqlAdapter(object):
         for sqlclass in self.SQL.keys():
             if hasattr(self.module.SqlAdapter, str(sqlclass)):
                 self.SQL[sqlclass] = getattr(self.sqladapter, sqlclass)
+        for sqlvar in self.SQL.keys():
+            setattr(self, sqlvar, self.SQL[sqlvar])
 
     # LIST ADAPTER METHODS
     # Sql Methods can be called on a class.variable basis if class init'd
