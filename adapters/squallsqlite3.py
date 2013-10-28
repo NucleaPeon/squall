@@ -17,10 +17,10 @@ Basic Overview:
     squallsql) instead of direct adapter sql/sql_compat methods
 '''
 
-import sys, sqlite3
-from squall import *
+import sys
+from squall import Sql, Verbatim, Select
 from squallerrors import *
-sys.path.append('..')
+import sqlite3
 
 class SqlAdapter(object):
     '''
@@ -104,10 +104,9 @@ class SqlAdapter(object):
             Explicitly invoke a rollback exception for sqlite3
         '''
         raise RollbackException('rollback() method invoked')
-
     
+        
     class transaction(Sql):
-
         '''
         :Description:
             Transaction object that takes a list of Squall Command objects and will
@@ -156,7 +155,7 @@ class SqlAdapter(object):
                         continue
                     else:
                         raise InvalidSquallObjectException(
-                            'Cannot add non-sql object {}'.format(str(a)))
+                     'Cannot add non-sql object {}'.format(str(a)))
                 self.tobjects.append(a)
             return args
                 

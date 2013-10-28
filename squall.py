@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Author: Daniel Kettle
 # Date:   July 25 2013
@@ -82,9 +81,7 @@ class Sql(Squall):
     
     def __init__(self, command='', table=None, field=None, 
                  values=[], *args, **kwargs):
-        
         super().__init__()
-        condition = kwargs.get('condition', None)
         self.command = Command(command)
         self.precallback = kwargs.get('precallback')
         self.postcallback = kwargs.get('postcallback')
@@ -94,17 +91,15 @@ class Sql(Squall):
                 'Command <{}> is not a valid command to issue'.format(
                     str(command)))
             
-        self.table = table
-        self.fields = field
-        self.values = values
-        if condition is None:
-            self.condition = ''
-        elif not isinstance(condition, Condition):
-            raise InvalidSqlConditionException(
-                '{} are not Condition objects'.format(
-                    str(condition)))
-        else:
-            self.condition = condition
+        self.table = kwargs.get('table', None)
+        self.fields = kwargs.get('field', None)
+        self.values = kwargs.get('values', [])
+        self.condition = kwargs.get('condition', None)
+        if not self.condition is None:
+            if not isinstance(self.condition, Condition):
+                raise InvalidSqlConditionException(
+                    '{} are not Condition objects'.format(
+                        str(self.condition)))
             
     def __repr__(self):
         '''
@@ -198,7 +193,8 @@ class Union(Sql):
 
 class Select(Sql):
     
-    def __init__(self, table, fields, condition='', **kwargs):
+    def __init__(self, table, fields, 
+                 condition='', **kwargs):
         '''
         :Description:
         :Parameters:
@@ -210,17 +206,14 @@ class Select(Sql):
                   here which garners the kwargs.get('result') call will fetch 
                   results of the statement.
         '''
-        super().__init__('SELECT', table, fields, condition, **kwargs)
+        super().__init__('SELECT', table=table, fields=fields, **kwargs)
         self.table = table
         self.fields = fields
         self.existsflag = False
-        if isinstance(condition, Where):
-            self.condition = condition
-        elif isinstance(condition, Exists):
+        self.condition = condition
+        if isinstance(self.condition, Exists):
             # FIXME: Bad coding practice, may get rid of
             self.existsflag = True
-        else: 
-            self.condition = ''
         self.lastqueryresults = ''
         
     def __repr__(self):
@@ -265,12 +258,9 @@ class Delete(Sql):
             - **kwargs; dict
                 - condition; Where object
         '''
-        super().__init__('DELETE', table, *args, condition=kwargs.get('condition'))
+        super().__init__('DELETE', table, *args, condition=kwargs.get('condition', ''))
         self.table = table
-        if isinstance(kwargs.get('condition'), Where):
-            self.condition = kwargs.get('condition')
-        else:
-            self.condition = ''
+        self.condition = kwargs.get('condition', '')
         
     def __repr__(self):
         return "DELETE FROM {} {}".format(self.table, self.condition)
@@ -278,14 +268,11 @@ class Delete(Sql):
 class Update(Sql):
     def __init__(self, table, fields, values, *args, **kwargs):
         super().__init__('UPDATE', table, fields, values, *args,
-                         condition=kwargs.get('condition', None))
+                         condition=kwargs.get('condition', ''))
         self.table = table
         self.field = fields
         self.values = values
-        if kwargs.get('condition', None) is None:
-            self.condition = ''
-        else:
-            self.condition = kwargs.get('condition', None)
+        self.condition = kwargs.get('condition', '')
         
     def __parse_values(self, field, value):
         return "{} = {}".format(field, value)
@@ -729,5 +716,3 @@ class Verbatim(Sql):
         
     def __repr__(self):
         return "{}".format(self.sql)
-    
-    

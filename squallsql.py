@@ -3,11 +3,8 @@ SquallSql is the python module that contains Sql Object references and
 generic driver references.
 '''
 import squall
-import sys
-import os
-from squallerrors import AdapterException
-
-sys.path.append(os.path.join(os.getcwd(), 'adapters'))
+import importlib
+from squallerrors import *
 
 class SqlAdapter(object):
     '''
@@ -61,7 +58,7 @@ class SqlAdapter(object):
         '''
         import importlib
         # Excepts the filename (without extension) of the adapter module
-        self.module = importlib.import_module(kwargs.get('driver'), '')
+        self.module = importlib.import_module(kwargs.get('driver'), None)
         if self.module is None:
             raise AdapterException()
         self.sqladapter = self.module.SqlAdapter(*args, **kwargs)
