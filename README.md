@@ -1,4 +1,4 @@
-pysquall
+squall
 ====
 
 Database Adapter for multiple sql vendors, one command fits all.
@@ -19,12 +19,7 @@ https://github.com/NucleaPeon/squall/wiki
 Recent Activity
 ====
 
-Working on allowing adapters to have their own specific versions
-of Sql objects. Primary Key and Create() objects work on sqlserver
-and many more objects such as Field() have been implemented on the
-same driver, with empty classes ported to squall.py.
-
-Lots of work to do still.
+Working on sqlserver branch
 
 Databases
 ====
@@ -56,29 +51,11 @@ Functionality that must be sustained:
 This software aims to be a solid single-threaded application first and 
 foremost. Multi-threading can be implemented at a later date.
 
-Sql Server (Currently Under Construction)
----------
-```
-import squall
-self.sqlobj = squall.Session().connect('myDatabase', adapter='sqlserver', trusted=True, driver='SQL Server')
-self.module = squall.db('sqlserver')
-```
+How to use this software
+----
 
-( PLEASE NOTE THAT USING USERNAME AND PASSWORD NOT TESTED, BUT MAY FUNCTION... )
-
-OR
-
-Sqlite3 
----------
-```
-import squallsql
-driver = squallsql.SqlAdapter(driver='squallsqlite3', 
-                              database='/path/to/database.db')
-```
-
-( driver will automatically attempt a connection )
-
-When specifying the "driver" kwarg, the value would be the module name of the adapter class that reflects the db you want to use.
+Please read wiki entries for up-to-date information regarding usage.
+https://github.com/NucleaPeon/squall/wiki
  
 Notes on Value objects
 ----------
