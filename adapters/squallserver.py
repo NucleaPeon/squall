@@ -410,7 +410,7 @@ class SqlAdapter(object):
                     - Else: Sql() statement if exists bool equals False
                     
             '''
-            self.exists=True
+            self.exists=exists
             self.selector = selector
             self.statement = statement
             

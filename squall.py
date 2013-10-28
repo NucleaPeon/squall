@@ -276,11 +276,11 @@ class Delete(Sql):
         return "DELETE FROM {} {}".format(self.table, self.condition)
         
 class Update(Sql):
-    def __init__(self, table, field, values, *args, **kwargs):
-        super().__init__('UPDATE', table, field, values, *args,
+    def __init__(self, table, fields, values, *args, **kwargs):
+        super().__init__('UPDATE', table, fields, values, *args,
                          condition=kwargs.get('condition', None))
         self.table = table
-        self.field = field
+        self.field = fields
         self.values = values
         if kwargs.get('condition', None) is None:
             self.condition = ''
@@ -304,7 +304,7 @@ class Update(Sql):
                         len(self.values)))
             return "UPDATE {} SET {} = {}{}".format(self.table, ', '.join(params), cond)
         for i in range(0, len(self.values)):
-            params.append(self.__parse_values(self.field.fields[i], self.values[i]))
+            params.append(self.__parse_values(self.field.fields[i], self.values[i]).strip())
         
         return "UPDATE {} SET {}{}".format(self.table, ', '.join(params), cond)      
      
